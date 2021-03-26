@@ -9,6 +9,17 @@
 #include <charconv>
 #include "ServerData.h"
 
+namespace HTTPCodes
+{
+    constexpr auto OK               = "200";
+    constexpr auto NOCONTENT        = "204";
+    constexpr auto BADREQUEST       = "400";
+    constexpr auto UNAUTHORISED     = "401";
+    constexpr auto FORBIDDEN        = "403";
+    constexpr auto CONFLICT         = "409";
+    constexpr auto INTERNALERROR    = "500";
+}
+
 template <class storageType>
 std::unordered_map<storageType, storageType> parseURLValues(std::string_view source)
 {
@@ -164,7 +175,7 @@ public:
         res->onAborted([res]() 
             {
                 //Internal Server Error
-                res->writeStatus("500");
+                res->writeStatus(HTTPCodes::INTERNALERROR);
                 res->end();
             });
     }
@@ -377,6 +388,14 @@ public:
         if (!ID)
             return std::nullopt;
         return sessions.at(ID.value()).userID;
+    }
+
+    std::optional<authLevel> getSessionAuthLevel(uWS::HttpRequest* req) const
+    {
+        const auto ID = getSessionID(req);
+        if (!ID || sessions.count(ID.value()) == 0)
+            return std::nullopt;
+        return sessions.at(ID.value()).authLevel;
     }
 
     bool isSessionUser(uWS::HttpRequest* req, std::string_view username) const

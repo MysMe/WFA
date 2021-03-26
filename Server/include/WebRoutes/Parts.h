@@ -1,6 +1,6 @@
 #pragma once
 #include "Network.h"
-#include "Response/Response.h"
+#include "Response.h"
 
 namespace webRoute
 {
@@ -23,7 +23,7 @@ namespace webRoute
         if (!b.hasElement("name"))
         {
             //Bad Request - Invalid arguments
-            res->writeStatus("400");
+            res->writeStatus(HTTPCodes::BADREQUEST);
             res->end();
             return;
         }
@@ -31,7 +31,7 @@ namespace webRoute
         if (!serverData::auth->verify(req, authLevel::manager))
         {
             //Forbidden - Insufficient permissions
-            res->writeStatus("403");
+            res->writeStatus(HTTPCodes::FORBIDDEN);
             res->end();
             return;
         }
@@ -44,7 +44,7 @@ namespace webRoute
         if (!status)
         {
             //Internal server error
-            res->writeStatus("500");
+            res->writeStatus(HTTPCodes::INTERNALERROR);
         }
         else
         {
@@ -58,7 +58,7 @@ namespace webRoute
         if (!b.hasElement("name"))
         {
             //Bad Request - Invalid arguments
-            res->writeStatus("400");
+            res->writeStatus(HTTPCodes::BADREQUEST);
             res->end();
             return;
         }
@@ -66,7 +66,7 @@ namespace webRoute
         if (!serverData::auth->verify(req, authLevel::manager))
         {
             //Forbidden - Insufficient permissions
-            res->writeStatus("403");
+            res->writeStatus(HTTPCodes::FORBIDDEN);
             res->end();
             return;
         }
@@ -76,7 +76,7 @@ namespace webRoute
         if (updateStatement.empty())
         {
             //OK, nothing to update
-            res->writeStatus("200");
+            res->writeStatus(HTTPCodes::OK);
             res->end();
             return;
         }
@@ -86,7 +86,7 @@ namespace webRoute
         if (!status)
         {
             //Internal server error
-            res->writeStatus("500");
+            res->writeStatus(HTTPCodes::INTERNALERROR);
         }
         else
         {
@@ -101,7 +101,7 @@ namespace webRoute
         if (!b.hasElement("name"))
         {
             //Bad Request - Invalid arguments
-            res->writeStatus("400");
+            res->writeStatus(HTTPCodes::BADREQUEST);
             res->end();
             return;
         }
@@ -109,7 +109,7 @@ namespace webRoute
         if (!serverData::auth->verify(req, authLevel::manager))
         {
             //Forbidden - Insufficient permissions
-            res->writeStatus("403");
+            res->writeStatus(HTTPCodes::FORBIDDEN);
             res->end();
             return;
         }
@@ -119,7 +119,7 @@ namespace webRoute
         if (!status)
         {
             //Internal server error
-            res->writeStatus("500");
+            res->writeStatus(HTTPCodes::INTERNALERROR);
         }
         else
         {
@@ -133,7 +133,7 @@ namespace webRoute
         if (!b.containsAll({ "name", "rename" }))
         {
             //Bad Request - Invalid arguments
-            res->writeStatus("400");
+            res->writeStatus(HTTPCodes::BADREQUEST);
             res->end();
             return;
         }
@@ -141,7 +141,7 @@ namespace webRoute
         if (!serverData::auth->verify(req, authLevel::manager))
         {
             //Forbidden - Insufficient permissions
-            res->writeStatus("403");
+            res->writeStatus(HTTPCodes::FORBIDDEN);
             res->end();
             return;
         }
@@ -152,7 +152,7 @@ namespace webRoute
         if (!status)
         {
             //Internal server error
-            res->writeStatus("500");
+            res->writeStatus(HTTPCodes::INTERNALERROR);
         }
         else
         {
@@ -167,7 +167,7 @@ namespace webRoute
         if (!b.containsAll({ "name", "quantity", "supplier", "price" }))
         {
             //Bad Request - Invalid arguments
-            res->writeStatus("400");
+            res->writeStatus(HTTPCodes::BADREQUEST);
             res->end();
             return;
         }
@@ -175,7 +175,7 @@ namespace webRoute
         if (!serverData::auth->verify(req, authLevel::manager))
         {
             //Forbidden - Insufficient permissions
-            res->writeStatus("403");
+            res->writeStatus(HTTPCodes::FORBIDDEN);
             res->end();
             return;
         }
@@ -186,7 +186,7 @@ namespace webRoute
         if (!supstatus || supresult.rowCount() != 1)
         {
             //Internal server error
-            res->writeStatus("500");
+            res->writeStatus(HTTPCodes::INTERNALERROR);
             res->end();
             return;
         }
@@ -199,7 +199,7 @@ namespace webRoute
             if (!groupstatus || groupresult.rowCount() != 1)
             {
                 //Internal server error
-                res->writeStatus("500");
+                res->writeStatus(HTTPCodes::INTERNALERROR);
                 res->end();
                 return;
             }
@@ -216,7 +216,7 @@ namespace webRoute
         if (!status)
         {
             //Internal server error
-            res->writeStatus("500");
+            res->writeStatus(HTTPCodes::INTERNALERROR);
         }
         else
         {
@@ -230,7 +230,7 @@ namespace webRoute
         if (!b.hasElement("name"))
         {
             //Bad Request - Invalid arguments
-            res->writeStatus("400");
+            res->writeStatus(HTTPCodes::BADREQUEST);
             res->end();
             return;
         }
@@ -238,7 +238,7 @@ namespace webRoute
         if (!serverData::auth->verify(req, authLevel::manager))
         {
             //Forbidden - Insufficient permissions
-            res->writeStatus("403");
+            res->writeStatus(HTTPCodes::FORBIDDEN);
             res->end();
             return;
         }
@@ -248,7 +248,7 @@ namespace webRoute
         if (updateStatement.empty())
         {
             //OK, nothing to update
-            res->writeStatus("200");
+            res->writeStatus(HTTPCodes::OK);
             res->end();
             return;
         }
@@ -258,7 +258,7 @@ namespace webRoute
         if (!status)
         {
             //Internal server error
-            res->writeStatus("500");
+            res->writeStatus(HTTPCodes::INTERNALERROR);
         }
         else
         {
@@ -272,7 +272,7 @@ namespace webRoute
         if (!q.hasElement("group") && !q.hasElement("supplier") && !q.hasElement("name"))
         {
             //Bad Request - Invalid arguments
-            res->writeStatus("400");
+            res->writeStatus(HTTPCodes::BADREQUEST);
             res->end();
             return;
         }
@@ -280,7 +280,7 @@ namespace webRoute
         if (!serverData::auth->verify(req, authLevel::employee))
         {
             //Forbidden - Insufficient permissions
-            res->writeStatus("403");
+            res->writeStatus(HTTPCodes::FORBIDDEN);
             res->end();
             return;
         }
@@ -323,7 +323,7 @@ namespace webRoute
         if (!status)
         {
             //Internal server error
-            res->writeStatus("500");
+            res->writeStatus(HTTPCodes::INTERNALERROR);
             res->end();
             return;
         }

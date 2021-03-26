@@ -1,6 +1,6 @@
 #pragma once
 #include "Network.h"
-#include "Response/Response.h"
+#include "Response.h"
 
 namespace webRoute
 {
@@ -15,14 +15,14 @@ namespace webRoute
         if (!b.containsAll({ "plate", "make", "model", "owner", "year", "colour" }))
         {
             //Bad Request - Invalid arguments
-            res->writeStatus("400");
+            res->writeStatus(HTTPCodes::BADREQUEST);
             res->end();
             return;
         }
         if (!serverData::auth->isSessionUser(req, b.getElement("owner")) && !serverData::auth->verify(req, authLevel::manager))
         {
             //Forbidden - Insufficient permissions
-            res->writeStatus("403");
+            res->writeStatus(HTTPCodes::FORBIDDEN);
             res->end();
             return;
         }
@@ -32,7 +32,7 @@ namespace webRoute
         if (!vStatus)
         {
             //Internal server error
-            res->writeStatus("500");
+            res->writeStatus(HTTPCodes::INTERNALERROR);
             res->end();
             return;
         }
@@ -50,7 +50,7 @@ namespace webRoute
         if (!status)
         {
             //Internal server error
-            res->writeStatus("500");
+            res->writeStatus(HTTPCodes::INTERNALERROR);
         }
         else
         {
@@ -64,7 +64,7 @@ namespace webRoute
         if (!b.hasElement("plate"))
         {
             //Bad Request - Invalid arguments
-            res->writeStatus("400");
+            res->writeStatus(HTTPCodes::BADREQUEST);
             res->end();
             return;
         }
@@ -74,7 +74,7 @@ namespace webRoute
             if (!serverData::auth->isSessionUserFromID(req, result[0][0]) && !serverData::auth->verify(req, authLevel::manager))
             {
                 //Forbidden - Insufficient permissions
-                res->writeStatus("403");
+                res->writeStatus(HTTPCodes::FORBIDDEN);
                     res->end();
                     return;
             }
@@ -87,7 +87,7 @@ namespace webRoute
         if (updateStatement.empty())
         {
             //OK, nothing to update
-            res->writeStatus("200");
+            res->writeStatus(HTTPCodes::OK);
             res->end();
             return;
         }
@@ -97,7 +97,7 @@ namespace webRoute
         if (!status)
         {
             //Internal server error
-            res->writeStatus("500");
+            res->writeStatus(HTTPCodes::INTERNALERROR);
         }
 
         std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") updated vehicle (\"" << q.getElement("plate") << "\").\n";
@@ -109,7 +109,7 @@ namespace webRoute
         if (!b.hasElement("plate"))
         {
             //Bad Request - Invalid arguments
-            res->writeStatus("400");
+            res->writeStatus(HTTPCodes::BADREQUEST);
             res->end();
             return;
         }
@@ -119,7 +119,7 @@ namespace webRoute
             if (!serverData::auth->isSessionUserFromID(req, result[0][0]) && !serverData::auth->verify(req, authLevel::manager))
             {
                 //Forbidden - Insufficient permissions
-                res->writeStatus("403");
+                res->writeStatus(HTTPCodes::FORBIDDEN);
                 res->end();
                 return;
             }
@@ -129,7 +129,7 @@ namespace webRoute
         if (!status)
         {
             //Internal Server Error
-            res->writeStatus("500");
+            res->writeStatus(HTTPCodes::INTERNALERROR);
             res->end();
             return;
         }

@@ -5,13 +5,20 @@
 #include "WebRoutes/Vehicle.h"
 #include "WebRoutes/Services.h"
 
+void expr(std::string& val)
+{
+    std::cout << val;
+}
+
 void net()
 {
+    expr(std::string("Hello"));
     uWS::SSLApp app;
     app.listen(9001, [&](auto*){});
 
     app.post("/request", HttpCallWrapper(webRoute::authenticate));
     app.get("/release", webRoute::deauthenticate);
+    app.get("/checkSession", webRoute::checkSession);
 
     app.post("/user/create", HttpCallWrapper(webRoute::createUser));
     app.get("/user/me", HttpCallWrapper(webRoute::getLocalUserData));
@@ -47,7 +54,7 @@ void net()
 
     app.any("/*", [](auto* res, auto* req) 
         {
-            res->writeStatus("400");
+            res->writeStatus(HTTPCodes::BADREQUEST);
             res->end("Bad request."); 
         });
 

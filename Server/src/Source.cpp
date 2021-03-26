@@ -163,27 +163,8 @@ void db()
     }
 }
 
-#include "Response.h"
-
-void resTest()
-{
-    responseWrapper out;
-    out.add("A", "A");
-    out.add("B", "B", true);
-    out.add("C", "C1");
-    out.add("C", "C2");
-    std::cout << out.toData(false) << '\n';
-
-    out = responseWrapper::fromData(out.toData(false));
-    std::cout << out.toData(false) << '\n';
-    
-
-    std::cin.ignore();
-}
-
 int main()      
 {
-    resTest();
     sqlite3DB DB(nullptr);
     {
         if (!DB.isOpen())

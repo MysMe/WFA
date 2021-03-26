@@ -9,6 +9,9 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT $
 
 
 add_executable(${PROJECT_NAME} src/Source.cpp)
+target_include_directories(${PROJECT_NAME} PRIVATE include)
+add_subdirectory(src)
+add_subdirectory(include)
 target_include_directories(${PROJECT_NAME} PRIVATE ../Shared/include)
 add_subdirectory(../Shared/include build)
 

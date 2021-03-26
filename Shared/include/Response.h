@@ -2,15 +2,27 @@
 #include <vector>
 #include <string>
 #include <variant>
-#include "Network.h"
+#include <optional>
+#include <cassert>
 
 class responseWrapper
 {
 public:
+    using stringContainer = std::vector<std::string>;
+    using objectContainer = std::vector<responseWrapper>;
+
+    enum index
+    {
+        strings,
+        objects
+    };
+
     //An element is either a text value or a collection of text values
-    using element = std::variant<std::string, responseWrapper>;
+    //using element = std::variant<std::string, responseWrapper>;
+    using elementContainer = std::variant<stringContainer, objectContainer>;
 private:
-    std::vector<std::pair<std::string, std::vector<element>>> elements;
+    //Elements are only arrays of strings OR objects, not mixed
+    std::vector<std::pair<std::string, elementContainer>> elements;
     //Elements may be forced to use array representation ([]'s), otherwise they will only use it when multiple items are present
     std::vector<bool> forcedArrays;
 
@@ -53,19 +65,62 @@ private:
         value.toData(src, depth, prespace, pad);
     }
 
+    static size_t size(const elementContainer& cont)
+    {
+        if (cont.index() == 0)
+            return std::get<std::vector<std::string>>(cont).size();
+        else
+            return std::get<std::vector<responseWrapper>>(cont).size();
+    }
+
+    template <class T>
+    static void containerToData(std::string& src, size_t depth, const std::vector<T>& values, bool forceArray, bool pad)
+    {
+        auto addPadding = [&](char val, size_t count = 1)
+        {
+            if (pad)
+                src.append(count, val);
+        };
+
+        assert(!values.empty());
+        if (values.size() > 1 || forceArray)
+        {
+            src += '[';
+            addPadding('\n');
+            for (const auto& i : values)
+            {
+                elementToData(src, depth + 1, i, true, pad);
+                src += ',';
+                addPadding('\n');
+            }
+            src.erase(src.end() - (size_t(1) + pad));
+            addPadding('\t', depth);
+            src += ']';
+        }
+        else
+        {
+            elementToData(src, depth, values.front(), false, pad);
+        }
+
+    }
+
     //Adds a single or multi-value element
     template <class T>
     void genericAdd(std::string_view key, T&& value, bool isForced)
     {
         auto it = find(key);
+        constexpr bool isWrapper = std::is_same<T, responseWrapper>::value;
+        if (it != elements.end() && it->second.index() != static_cast<size_t>(isWrapper))
+        {
+            assert(false);
+        }
         if (it == elements.end())
         {
-            elements.emplace_back();
-            it = elements.end() - 1;
-            it->first = key;
+            elements.emplace_back(key, std::vector<T>());
             forcedArrays.emplace_back(isForced);
+            it = elements.end() - 1;
         }
-        it->second.emplace_back(std::forward<T>(value));
+        std::get<std::vector<T>>(it->second).emplace_back(std::forward<T>(value));
     }
 
 
@@ -96,28 +151,35 @@ private:
             elementToData(src, 0, key, false, false);
             src += ':';
             addPadding(' ');
-            if (value.size() > 1 || forcedArrays[i])
-            {
-                src += '[';
-                addPadding('\n');
-                for (const auto& i : value)
-                {
-                    std::visit([&](const auto& obj) {elementToData(src, depth + 1, obj, true, pad); }, i);
-                    src += ',';
-                    addPadding('\n');
-                }
-                src.erase(src.end() - (size_t(1) + pad));
-                addPadding('\t', depth);
-                src += ']';
-            }
-            else if (value.size() == 1)
-            {
-                std::visit([&](const auto& obj) {elementToData(src, depth, obj, false, pad); }, value[0]);
-            }
+
+            if (value.index() == 0)
+                containerToData(src, depth, std::get<std::vector<std::string>>(value), forcedArrays[i], pad);
             else
-            {
-                addPadding('\"', 2);
-            }
+                containerToData(src, depth, std::get<std::vector<responseWrapper>>(value), forcedArrays[i], pad);
+
+            //if (size(value) > 1 || forcedArrays[i])
+            //{
+            //    src += '[';
+            //    addPadding('\n');
+            //    for (const auto& i : value)
+            //    {
+            //        std::visit([&](const auto& obj) {elementToData(src, depth + 1, obj, true, pad); }, i);
+            //        src += ',';
+            //        addPadding('\n');
+            //    }
+            //    src.erase(src.end() - (size_t(1) + pad));
+            //    addPadding('\t', depth);
+            //    src += ']';
+            //}
+            //else if (value.size() == 1)
+            //{
+            //    std::visit([&](const auto& obj) {elementToData(src, depth, obj, false, pad); }, value[0]);
+            //}
+            //else
+            //{
+            //    addPadding('\"', 2);
+            //}
+
             src += ",";
             addPadding('\n');
         }
@@ -141,7 +203,7 @@ public:
         genericAdd(key, std::move(value), forceArray);
     }
 
-    const std::vector<element>& search(std::string_view key) const
+    std::optional<std::reference_wrapper<const elementContainer>> search(std::string_view key) const
     {
         const auto it = find(key);
         if (it == elements.cend())
@@ -150,7 +212,7 @@ public:
         }
         else
         {
-            return it->second;
+            return std::ref(it->second);
         }
     }
 
@@ -161,8 +223,13 @@ public:
         return ret;
     }
 
-    static responseWrapper fromData(std::string_view data)
+    static std::optional<responseWrapper> fromData(std::string_view data)
     {
+        if (data.empty())
+            return responseWrapper();
+        if (data.front() != '{' || data.back() != '}')
+            return std::nullopt;
+
         auto match = [](std::string_view::const_iterator begin, std::string_view::const_iterator end, char open, char close)
         {
             assert(*begin == open);
@@ -184,8 +251,6 @@ public:
             return end;
         };
 
-        assert(data.front() == '{' && data.back() == '}');
-
         responseWrapper ret;
 
         auto left = data.cbegin() + 1;
@@ -206,8 +271,10 @@ public:
             if (next == '{')
             {
                 const auto blockEnd = match(std::next(div), end, '{', '}');
-                element temp = fromData(std::string_view(&next, &*blockEnd - &next));
-                ret.elements.emplace_back(key, std::vector<element>{std::move(temp)} );
+                auto val = fromData(std::string_view(&next, &*blockEnd - &next));
+                if (!val.has_value())
+                    return std::nullopt;
+                ret.elements.emplace_back(key, elementContainer{ std::vector<responseWrapper>{std::move(val.value())} });
                 left = std::next(blockEnd);
                 if (left != end)
                     ++left;
@@ -217,45 +284,121 @@ public:
             {
                 //##
                 const auto blockEnd = match(std::next(div), end, '[', ']');
-
-                std::vector<element> elements;
-
                 auto subleft = div + 2;
-
-                auto add = [&]()
+                if (*subleft == '{')
                 {
-                    std::string_view::const_iterator subdiv;
-                    if (*subleft == '{')
+                    //Array of objects
+                    std::vector<responseWrapper> elements;
+
+                    enum
                     {
-                        //##
-                        subdiv = match(subleft, blockEnd, '{', '}');
-                        elements.emplace_back(fromData({ &*subleft, size_t(subdiv - subleft) }));
-                    }
-                    else
+                        ADDED,
+                        ADDED_AT_END,
+                        FAILED
+                    };
+
+                    auto add = [&]()
                     {
-                        subdiv = std::find(subleft, blockEnd, ',');
+                        auto subdiv = match(subleft, blockEnd, '{', '}');
+                        auto val = fromData({ &*subleft, size_t(subdiv - subleft) });
+                        if (!val.has_value())
+                            return FAILED;
+                        elements.emplace_back(std::move(val.value()));
+
+                        subleft = subdiv;
+                        if (subdiv == blockEnd)
+                            return ADDED_AT_END;
+                        ++subleft;
+                        return ADDED;
+                    };
+
+
+                    //Loop until no more can be added
+                    auto result = ADDED;
+                    do
+                    {
+                        result = add();
+                        if (result == FAILED)
+                            return std::nullopt;
+                    } while (result != ADDED_AT_END);
+
+                    ret.elements.emplace_back(key, std::move(elements));
+                }
+                else
+                {
+                    //Array of values
+                    std::vector<std::string> elements;
+
+
+                    auto add = [&]()
+                    {
+                        auto subdiv = std::find(subleft, blockEnd, ',');
                         elements.emplace_back(std::string(subleft, subdiv));
-                    }
-                    subleft = subdiv;
-                    if (subdiv == blockEnd)
-                        return false;
-                    ++subleft;
-                    return true;
-                };
+                        
+                        subleft = subdiv;
+                        if (subdiv == blockEnd)
+                            return false;
+                        ++subleft;
+                        return true;
+                    };
 
-                //Loop until no more can be added
-                while (add()) {}
+                    while (add()) {}
 
-                ret.elements.emplace_back(key, std::move(elements));
+                    ret.elements.emplace_back(key, std::move(elements));
+                }
                 left = std::next(blockEnd);
                 if (left != end)
                     ++left;
                 continue;
+
+                //std::vector<element> elements;
+
+
+
+                //auto add = [&]()
+                //{
+                //    std::string_view::const_iterator subdiv;
+                //    if (*subleft == '{')
+                //    {
+                //        //##
+                //        subdiv = match(subleft, blockEnd, '{', '}');
+                //        auto val = fromData({ &*subleft, size_t(subdiv - subleft) });
+                //        if (!val.has_value())
+                //            return FAILED;
+                //        elements.emplace_back(std::move(val.value()));
+                //    }
+                //    else
+                //    {
+                //        subdiv = std::find(subleft, blockEnd, ',');
+                //        elements.emplace_back(std::string(subleft, subdiv));
+                //    }
+                //    subleft = subdiv;
+                //    if (subdiv == blockEnd)
+                //        return ADDED_AT_END;
+                //    ++subleft;
+                //    return ADDED;
+                //};
+
+                ////Loop until no more can be added
+                //auto result = ADDED;
+                //do
+                //{
+                //    result = add();
+                //    if (result == FAILED)
+                //        return std::nullopt;
+                //}
+                //while (result != ADDED_AT_END);
+
+                //ret.elements.emplace_back(key, std::move(elements));
+                //left = std::next(blockEnd);
+                //if (left != end)
+                //    ++left;
+                //continue;
             }
             else
             {
                 const auto blockEnd = std::find(div, end, ',');
-                ret.elements.emplace_back(key, std::vector<element>{ std::string(std::next(div), blockEnd) });
+                ret.elements.emplace_back(key, elementContainer{ std::vector<std::string>{ std::string(std::next(div), blockEnd) } });
                 left = blockEnd;
                 if (left != end)
                     ++left;
@@ -266,7 +409,7 @@ public:
         return ret;
     }
 
-    static responseWrapper fromUnformattedData(std::string data)
+    static std::optional<responseWrapper> fromUnformattedData(std::string data)
     {
 
         bool isQuote = false;

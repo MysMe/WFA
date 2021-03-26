@@ -1,326 +1,13 @@
 #include <iostream>
-#include <uwebsockets/App.h>
-#include <curl/curl.h>
-#include <string_view>
-#include <vector>
 
-class curlwrapper
-{
-    CURL* object = nullptr;
-    void tidy()
-    {
-        if (object != nullptr)
-        {
-            curl_easy_cleanup(object);
-            object = nullptr;
-        }
-    }
-public:
-    curlwrapper()
-    {
-        object = curl_easy_init();
-    }
-    curlwrapper(const curlwrapper&) = delete;
-    curlwrapper(curlwrapper&& other) noexcept
-    {
-        object = other.object;
-        other.object = nullptr;
-    }
-    curlwrapper& operator=(const curlwrapper&) = delete;
-    curlwrapper& operator=(curlwrapper&& other) noexcept
-    {
-        tidy();
-        object = other.object;
-        other.object = nullptr;
-        return *this;
-    }
-    ~curlwrapper()
-    {
-        tidy();
-    }
-
-    CURL* data() { return object; }
-    const CURL* data() const { return object; }
-    operator CURL* () { return object; }
-    operator const CURL* () const { return object; }
-    bool valid() const { return object != nullptr; }
-
-    void perform()
-    {
-        curl_easy_perform(object);
-    }
-};
-
-class multicurlwrapper
-{
-public:
-    CURLM* object = nullptr;
-    std::vector<curlwrapper> curls;
-
-    void tidy()
-    {
-        if (object != nullptr)
-        {
-            for (auto& i : curls)
-            {
-                curl_multi_remove_handle(object, i.data());
-            }
-            curls.clear();
-            curl_multi_cleanup(object);
-        }
-    }
-public:
-    multicurlwrapper()
-    {
-        object = curl_multi_init();
-    }
-    multicurlwrapper(const multicurlwrapper& other) = delete;
-    multicurlwrapper(multicurlwrapper&& other) noexcept
-    {
-        object = other.object;
-        other.object = nullptr;
-        curls = std::move(other.curls);
-        other.curls.clear();
-    }
-    multicurlwrapper& operator=(const multicurlwrapper&) = delete;
-    multicurlwrapper& operator=(multicurlwrapper&& other) noexcept
-    {
-        tidy();
-        object = other.object;
-        other.object = nullptr;
-        curls = std::move(other.curls);
-        other.curls.clear();
-    }
-
-    ~multicurlwrapper()
-    {
-        tidy();
-    }
-
-    void perform()
-    {
-        int connections = 0;
-        do
-        {
-            curl_multi_perform(object, &connections);
-        } while (connections != 0);
-    }
-
-    void add(curlwrapper&& obj)
-    {
-        curls.emplace_back(std::move(obj));
-        curl_multi_add_handle(object, curls.back().data());
-    }
-};
-
-struct APIResponse
-{
-    std::vector<std::pair<std::string, std::string>> headers;
-    std::string response;
-    long response_code = 0;
-    double responseTime = 0;
-
-    void bind(curlwrapper& curl) noexcept
-    {
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-        curl_easy_setopt(curl, CURLOPT_HEADERDATA, &headers);
-        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, &writeHeaders);
-        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-        curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &responseTime);
-    }
-
-    static size_t writeHeaders(char* buffer, size_t size, size_t nitems, decltype(headers)* data)
-    {
-        const auto div = std::find(buffer, buffer + nitems, ':');
-        std::string name{ buffer, div };
-        std::string value;
-        if (div != buffer + nitems)
-        {
-            assert(div[1] = ' ');
-            assert(buffer[nitems - 1] == '\n' && buffer[nitems - 2] == '\r');
-            //Skip the ':' and following space, ignore the trailing \r\n
-            value.assign(div + 2, buffer + nitems - 2);
-            data->emplace_back(std::move(name), std::move(value));
-        }
-        return nitems;
-    }
-};
-
-class requestWrapper
-{
-    static size_t dataWrite(void* dataptr, size_t size, size_t nmemb, std::string* data)
-    {
-        data->append((char*)dataptr, size * nmemb);
-        return size * nmemb;
-    }
-
-    APIResponse response;
-    curlwrapper curl;
-
-    static curlwrapper bind(APIResponse& response, std::string_view URL)
-    {
-        curlwrapper curl;
-        if (!curl.valid()) return curl;
-        response.bind(curl);
-        curl_easy_setopt(curl, CURLOPT_URL, URL.data());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, dataWrite);
-        return curl;
-    }
-
-    void perform()
-    {
-        curl.perform();
-        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response.response_code);
-        curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &response.responseTime);
-    }
-
-public:
-    requestWrapper() = delete;
-    requestWrapper(std::string_view URL)
-    {
-        curl = bind(response, URL);
-    }
-
-    requestWrapper(requestWrapper&& other) noexcept
-    {
-        *this = std::move(other);
-    }
-    requestWrapper& operator=(requestWrapper&& other) noexcept
-    {
-        curl = std::move(other.curl);
-        response.bind(curl);
-        return *this;
-    }
-
-    void setCookies(const std::string& values)
-    {
-        curl_easy_setopt(curl, CURLOPT_COOKIE, values.c_str());
-    }
-
-    void retarget(const std::string& URL)
-    {
-        curl_easy_setopt(curl, CURLOPT_URL, URL.data());
-    }
-
-    const APIResponse& post(std::string_view data)
-    {
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.data());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, data.size());
-        perform();
-        return response;
-    }
-
-    const APIResponse& get()
-    {
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, nullptr);
-        curl_easy_setopt(curl, CURLOPT_HTTPGET, true);
-        perform();
-        return response;
-    }
-};
-
-#include <map>
-std::string params_string(std::map<std::string, std::string> const& params)
-{
-    if (params.empty()) return "";
-    std::map<std::string, std::string>::const_iterator pb = params.cbegin(), pe = params.cend();
-    std::string data = pb->first + "=" + pb->second;
-    ++pb; if (pb == pe) return data;
-    for (; pb != pe; ++pb)
-        data += "&" + pb->first + "=" + pb->second;
-    return data;
-}
-
-std::string testTranslate();
-
-#include <charconv>
-
-template <class Fn>
-void extractPostBody(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, Fn&& callback)
-{
-    const size_t contentLength = [&]()->size_t
-    {
-        size_t val;
-        const auto header = req->getHeader("content-length");
-        const auto res = std::from_chars(header.data(), header.data() + header.size(), val);
-        if (res.ec != std::errc())
-            return 0;
-        return val;
-    }();
-
-    if (contentLength == 0)
-    {
-        callback(res, req, {});
-        return;
-    }
-
-    std::string contentBuffer;
-    contentBuffer.reserve(contentLength);
-
-
-    //Note that this is a callback which will be called outside the current function scope, ergo the body and callback must be copied
-    //This callback will be called multiple times, so the data it stores must be mutable so it can be accumulated
-    res->onData([res, req, callback = std::move(callback), buffer = std::move(contentBuffer)](std::string_view data, bool last) mutable
-    {
-        buffer.append(data.data(), data.size());
-        if (last)
-        {
-            callback(res, req, buffer);
-        }
-    });
-
-    res->onAborted([res]()
-        {
-            //Internal Server Error
-            res->writeStatus("500");
-            res->end();
-        });
-}
-
-void writeBack(uWS::HttpResponse<true>* res, const APIResponse& API)
-{
-    res->writeStatus(std::to_string(API.response_code));
-    for (const auto& i : API.headers)
-    {
-        res->writeHeader(i.first, i.second);
-    }
-    res->tryEnd(API.response);
-}
-
-void forwardPost(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, requestWrapper&& curl)
-{
-    extractPostBody(res, req,
-        [curl = std::move(curl)](uWS::HttpResponse<true>* res, uWS::HttpRequest* req, std::string_view body) mutable
-    {
-        writeBack(res, curl.post(body));
-        res->end();
-    }
-    );
-}
-
-void forward(uWS::HttpResponse<true>* res, uWS::HttpRequest* req)
-{
-    std::string url = "localhost:9001";
-    const auto path = req->getUrl();
-    url.append(path.data(), path.size());
-    const auto query = req->getQuery();
-    url.append(query.data(), query.size());
-    requestWrapper request(url);
-    request.setCookies(std::string{ req->getHeader("cookie") });
-    if (req->getMethod() == "post")
-    {
-        forwardPost(res, req, std::move(request));
-    }
-    else
-    {
-        writeBack(res, request.get());
-        res->end();
-    }
-}
+#include "Forwarding.h"
 
 #include <variant>
 #include <any>
 #include <optional>
+#include <fstream>
+#include <array>
+
 
 std::string_view::const_iterator tagSearch(std::string_view::const_iterator begin, std::string_view::const_iterator end, std::string_view prefix, std::string_view postfix)
 {
@@ -355,444 +42,572 @@ std::string_view::const_iterator tagSearch(std::string_view::const_iterator begi
     return end;
 }
 
-struct formattedResponse
+/*
+Possible tags:
+    <HTMT:XXX></HTMT>, Iterate over named field values
+    <HTMTVAL:XXX>, Get the value of a name field, which may only have one value
+    <HTMTCODE:XXX>, Only includes the translation content if the HTTP code matches XXX
+
+
+Example HTMT:
+
+<HTML>
+<HTMT>Your username is <HTMTVAL:USERNAME><HTMT>
+</HTML>
+*/
+
+class translation;
+
+class translationValue
 {
-    std::string field;
-    std::optional<std::vector<formattedResponse>> children;
-
-    bool isBranch() const { return children.has_value(); }
-    bool isLeaf() const { return !isBranch(); }
-
-    //This node is a branch to a leaf node and therefore only has one child
-    bool holdsLeaf() const { return isBranch() && children->size() == 1 && (*children)[0].isLeaf(); }
-
-    bool operator==(const std::string_view name) const { return field == name; }
-
-    static std::pair<formattedResponse, std::string_view::const_iterator> interpret(std::string_view::const_iterator begin, std::string_view::const_iterator end)
+public:
+    enum class state
     {
-        formattedResponse ret;
+        access,
+        HTML,
+        translation
+    };
 
-        const auto stripped = std::find_if(begin, end, [](char v) {return !std::isspace(v); });
-        if (stripped == end)
+    using value_type = std::variant<std::string, std::unique_ptr<translation>>;
+    value_type value;
+    state valueType;
+public:
+
+    translationValue() = default;
+    translationValue(std::string_view str, state type) : value(std::string(str)), valueType(type) {}
+    translationValue(translation&& tran) : value(std::make_unique<translation>(std::move(tran))), valueType(state::translation) {}
+
+    translationValue(const translationValue&) = delete;
+    translationValue(translationValue&&) = default;
+    translationValue& operator=(const translationValue&) = delete;
+    translationValue& operator=(translationValue&&) = default;
+
+    static translationValue asHTML(std::string_view str) { return translationValue(str, state::HTML); }
+    static translationValue asAccess(std::string_view str) { return translationValue(str, state::access); }
+    static translationValue asTranslation(translation&& tran) { return translationValue(std::move(tran)); }
+
+    void apply(std::string& source, const responseWrapper& data, long httpCode) const;
+};
+
+class translationCondition
+{
+public:
+    bool check(const responseWrapper& data) const
+    {
+        return true;
+    }
+};
+
+class translation
+{ 
+    enum class matchType
+    {
+        always,
+        tag,
+        code,
+        condition
+    };
+
+    matchType match = matchType::always;
+    std::variant<std::string, unsigned long, translationCondition> tag;
+
+    std::vector<translationValue> values;
+
+
+    static void parseSubHTML(translation& obj, std::string_view HTML)
+    {
+        //Number of characters in "<HTMTVAL"
+        constexpr auto tagSize = 9;
+
+        auto left = HTML.cbegin();
+        while (left != HTML.cend())
         {
-            //Empty field with no children
-            return { ret, end };
-        }
+            //Find any value requests
+            const auto fpos = std::string_view(&*left, HTML.cend() - left).find("<HTMTVAL:");
+            auto it = fpos != std::string_view::npos ? left + fpos : HTML.cend();
 
-        if (*stripped != '<')
-        {
-            ret.field.assign(stripped, end);
-            return { ret, end };
-        }
+            //Add any text before the value request as raw HTML
+            if (left != it)
+                obj.values.emplace_back(translationValue::asHTML(std::string_view(&*left, it - left)));
 
-
-
-        const auto tagEnd = std::find(stripped, end, '>');
-        if (tagEnd == end)
-        {
-            ret.field = "{PARSE ERROR: Tag not closed.}";
-            return { ret, end };
-        }
-
-        const auto contentStart = tagEnd + 1;
-
-        std::string_view tagName{ &*(stripped + 1), static_cast<size_t>(std::distance(stripped, tagEnd)) - 1 };
-
-        const auto blockEnd = tagSearch(stripped, end, std::string_view(&*stripped, tagName.size()), std::string("/") + std::string(tagName) + ">");
-
-        const auto contentEnd = blockEnd - tagName.size() - 3;
-
-        ret.field = tagName;
-
-        if (contentStart != contentEnd)
-            ret.children = std::vector<formattedResponse>{};
-
-        auto it = contentStart;
-        while (it != contentEnd)
-        {
-            auto [res, pos] = formattedResponse::interpret(it, contentEnd);
-            if (res.field.empty())
+            //There may be no value reference
+            if (it == HTML.cend())
                 break;
-            it = pos;
-            ret.children->emplace_back(std::move(res));
+
+            const auto nameStart = it + tagSize;
+            const auto nameEnd = std::find(nameStart, HTML.cend(), '>');
+
+            //Extract the value name
+            if (left != it)
+                obj.values.emplace_back(translationValue::asAccess(std::string_view(&*nameStart, nameEnd - nameStart)));
+            //Skip the closing '>'
+            left = nameEnd + 1;
         }
-        return { ret, blockEnd };
     }
 
-    static formattedResponse tlInterpret(std::string_view input)
+    bool matches(const responseWrapper& data, unsigned long httpCode) const
     {
-        formattedResponse ret;
-        ret.children = std::vector<formattedResponse>();
-        auto it = input.cbegin();
-        while (it != input.cend())
+        switch (match)
         {
-            auto [res, pos] = interpret(it, input.cend());
-            if (res.field.empty())
-                break;
-            it = pos;
-            ret.children->emplace_back(std::move(res));
+        default:
+            return true;
+        case(matchType::code):
+            return httpCode == std::get<unsigned long>(tag);
+        case(matchType::condition):
+            return std::get<translationCondition>(tag).check(data);
         }
+    }
+
+    template <typename... T>
+    static std::array<size_t, sizeof...(T)> findNextSet(std::string_view source, T... strings)
+    {
+        return std::array<size_t, sizeof...(T)>
+        {
+            source.find(strings.data()), ...
+        };
+    }
+
+public:
+
+    translation() = default;
+    translation(const translation&) = delete;
+    translation(translation&&) = default;
+    translation& operator=(const translation&) = delete;
+    translation& operator=(translation&&) = default;
+
+    void apply(std::string& source, const responseWrapper& data, long httpCode) const
+    {
+        if (match == matchType::always)
+        {
+            //Special case for empty <HTMT> tags and/or default translations
+            for (const auto& i : values)
+                i.apply(source, data, httpCode);
+        }
+        else if (matches(data, httpCode))
+        {
+            if (match == matchType::tag)
+            {
+                const auto maybeSubField = data.search(std::get<std::string>(tag));
+                //Unmatched tags are repeated 0 times
+                if (!maybeSubField.has_value())
+                    return;
+
+                //All subobjects must be objects, not value (arrays)
+                assert(maybeSubField.value().get().index() == responseWrapper::index::objects);
+                for (const auto& i : std::get<responseWrapper::objectContainer>(maybeSubField.value().get()))
+                {
+                    for (const auto& u : values)
+                        u.apply(source, i, httpCode);
+                }
+            }
+            else
+            {
+                for (const auto& i : values)
+                {
+                    i.apply(source, data, httpCode);
+                }
+            }
+        }
+    }
+
+    std::string apply(const responseWrapper& data, long httpCode) const
+    {
+        std::string ret;
+        apply(ret, data, httpCode);
         return ret;
     }
 
-};
-
-
-
-class translation
-{
-public:
-
-    struct operation
+    static translation parse(std::string_view source)
     {
-        enum class type
+        //Divide the string by ever instance of "<HTMT:", "<HTMTVAL:" and "<HTMTCOND:" and their respective closing tags
+        std::vector<std::string_view> subsections;
         {
-            substitute,
-            assign
-        };
+            size_t left = 0;
+            auto found = findNextSet(std::string_view(source.data() + left, source.size() - left), "<HTMT:", "<HTMTVAL:", "<HTMTCOND:");
+        }
 
-        type op;
-        std::string data;
-        std::string perform(const formattedResponse& res) const
+
+
+
+
+
+        translation ret;
+        auto left = source.cbegin();
+        while (left != source.cend())
         {
-            switch (op)
+            constexpr std::string_view objectTag = "<HTMT:";
+            constexpr std::string_view objectClose = "</HTMT>";
+            constexpr std::string_view codeTag = "<HTMTCODE:";
+            constexpr std::string_view codeClose = "</HTMTCODE>";
+
+            //Iterator to the first <HTMT:> or <HTMTCODE:> tag
+            std::string_view::const_iterator it;
+            //Determines the type of tag it refers to
+            matchType type;
             {
-            case(type::substitute):
-                return data;
-            case(type::assign):
-                if (res.isLeaf())
+                const std::string_view str{ &*left, size_t(source.cend() - left) };
+                auto tagPos = str.find(objectTag);
+                if (tagPos == std::string_view::npos)
+                    tagPos = str.size();
+                const auto codePos = std::string_view{ &*left, tagPos }.find(codeTag);
+                if (codePos < tagPos)
                 {
-                    if (data == "")
-                    {
-                        return res.field;
-                    }
-                    else
-                    {
-                        return "{HTMT ERROR: Current object (\"" + res.field + "\") did not have any subobjects, attempted to access \"" + data + "\".}";
-                    }
-                }
-                else if (data == "" && res.holdsLeaf())
-                {
-                    return (*res.children)[0].field;
+                    it = left + codePos;
+                    type = matchType::code;
                 }
                 else
                 {
-                    const auto begin = res.children->cbegin(), end = res.children->cend();
-                    const std::string_view view(data);
-                    const auto obj = std::find(begin, end, view);
-                    if (obj == res.children->cend())
-                    {
-                        return "{HTMT ERROR: Current object (\"" + res.field + "\") did not have subobject \"" + data + "\".}";
-                    }
-                    else if (!obj->holdsLeaf())
-                    {
-                        return "{HTMT ERROR: Current object (\"" + res.field + "\") had subobject \"" + data + "\" but it was not a field.}";
-                    }
-                    else
-                    {
-                        return (*obj->children)[0].field;
-                    }
+                    it = left + tagPos;
+                    type = matchType::tag;
                 }
-            default:
-                return "";
             }
-        }
-    };
 
-    std::string search;
-    size_t minPos = 0, maxPos = std::numeric_limits<size_t>::max();
+            //Leading text may be empty
+            if (left != it)
+                parseSubHTML(ret, std::string_view(&*left, it - left));
 
-    std::vector<std::variant<operation, translation>> structure;
-
-    std::string execute(const formattedResponse& res) const
-    {
-        std::string ret;
-        for (auto& i : structure)
-        {
-            if (i.index() == 0)
-            {
-                ret += std::get<operation>(i).perform(res);
-            }
-            else
-            {
-                ret += std::get<translation>(i).perform(res);
-            }
-        }
-        return ret;
-    }
-
-    void interpretTagArgs(std::string_view tag)
-    {
-        tag;
-    }
-
-    void parseStatement(std::string_view statement)
-    {
-        size_t pos = 0;
-        while (pos < statement.size())
-        {
-            size_t next = statement.find('[', pos);
-            if (next == std::string_view::npos)
-            {
-                operation t;
-                t.op = operation::type::substitute;
-                t.data.assign(statement.cbegin() + pos, statement.cend());
-                structure.emplace_back(std::move(t));
+            //There may not be any tags
+            if (it == source.cend())
                 break;
-            }
 
-            size_t end = statement.find(']', next);
-            if (end == std::string_view::npos)
-                end = statement.size();
+            //Find the end of the tag
+            const auto tagEnd = (type == matchType::code)
+                ? tagSearch(it, source.cend(), codeTag, codeClose)
+                : tagSearch(it, source.cend(), objectTag, objectClose);
 
-            operation t;
-            t.op = operation::type::substitute;
-            t.data.assign(statement.cbegin() + pos, statement.cbegin() + next);
-            structure.emplace_back(std::move(t));
+            //Find the end minus the closing tag
+            const auto subEnd = tagEnd - ((type == matchType::code) ? codeClose.size() : objectClose.size());
 
-            t.op = operation::type::assign;
-            t.data.assign(statement.cbegin() + next + 1, statement.cbegin() + end);
-            structure.emplace_back(std::move(t));
+            //Find the closing bracket of the opening <HTMT:XXX>
+            const auto tagValueEnd = std::find(it, source.cend(), '>');
 
-            pos = end + 1;
+            //The next character is the first in the sub-translation
+            const auto subBegin = std::next(tagValueEnd);
+
+            //Parse the internal text as a translation
+            translation sub = translation::parse(std::string_view(&*subBegin, subEnd - subBegin));
+            //sub.tagName.assign(it + ((type == matchType::code) ? codeTag.size() : objectTag.size()), tagValueEnd);
+            sub.match = type;
+            ret.values.emplace_back(std::move(sub));
+
+            left = tagEnd;
         }
-    }
-
-public:
-    
-    static translation parse(std::string_view input)
-    {
-        translation ret;
-        
-        assert(input.size() > sizeof("<HTMT>"));
-        assert(std::strncmp(input.data(), "<HTMT>", sizeof("<HTMT>") - 1) == 0);
-        assert(std::strncmp(input.data() + input.size() - sizeof("</HTMT>") + 1, "</HTMT>", sizeof("</HTMT>") - 1) == 0);
-
-
-        auto openEnd = input.find('>');
-        auto closeStart = input.size() - sizeof("</HTMT>");
-
-        ret.interpretTagArgs(std::string_view(input.data(), openEnd));
-
-        input = std::string_view(input.data() + openEnd + 1, closeStart - openEnd);
-
-        size_t pos = 0;
-        while (pos < input.size())
-        {
-            size_t next = input.find("<HTMT", pos);
-            if (next == std::string_view::npos)
-                next = input.size();
-
-            if (pos != next)
-            {
-                ret.parseStatement(std::string_view(input.data() + pos, next - pos));
-            }
-            if (next != input.size())
-            {
-                auto tagEnd = tagSearch(input.cbegin() + next, input.cend(), "<HTMT", "/HTMT>");
-                ret.structure.emplace_back(
-                    translation::parse(
-                        std::string_view(input.data() + next, std::distance(input.cbegin() + next, tagEnd))));
-
-                pos = std::distance(input.cbegin(), tagEnd);
-            }
-            else
-            {
-                pos = next;
-            }
-        }
-
-        return ret;
-    }
-
-    std::string perform(const formattedResponse& res) const
-    {
-        std::string ret;
-        if (!res.children)
-            return ret;
-        size_t pos = 0;
-        for (auto i : *res.children)
-        {
-            if (search == "" || i.field == search)
-            {
-                if (pos < minPos)
-                {
-                    pos++;
-                    continue;
-                }
-                if (pos >= maxPos)
-                {
-                    break;
-                }
-                ret += execute(i);
-                pos++;
-            }
-        }
-        return ret;
-    }
-
-};
-
-class translatedPage
-{
-public:
-    std::vector<std::variant<std::string, translation>> source;
-
-public:
-
-    std::string translate(const formattedResponse& res)
-    {
-        std::string ret;
-        assert(res.children.has_value());
-
-        for (const auto& i : source)
-        {
-            if (i.index() == 0)
-            {
-                ret += std::get<std::string>(i);
-            }
-            else
-            {
-                const auto& val = std::get<translation>(i);
-                ret += val.perform(res);
-            }
-        }
-        return ret;
-    }
-
-    static translatedPage parseTags(std::string_view input)
-    {
-        translatedPage ret;
-
-        size_t pos = 0;
-        while (pos < input.size())
-        {
-            const std::string_view substr = std::string_view(input.data() + pos, input.size() - pos);
-            size_t next = substr.find("<HTMT");
-            if (next == std::string_view::npos)
-                next = input.size();
-
-            if (pos != next)
-            {
-                ret.source.emplace_back(std::string(input.cbegin() + pos, input.cbegin() + next));
-            }
-
-            if (next != input.size())
-            {
-                auto tagEnd = tagSearch(input.cbegin() + next, input.cend(), "<HTMT", "/HTMT>");
-                ret.source.emplace_back(
-                    translation::parse(
-                        std::string_view(input.data() + next, std::distance(input.cbegin() + next, tagEnd))));
-
-                pos = std::distance(input.cbegin(), tagEnd);
-            }
-            else
-            {
-                pos = next;
-            }
-        }
-
         return ret;
     }
 };
 
-
-formattedResponse gr;
-
-
-std::string testTranslate()
+void translationValue::apply(std::string& source, const responseWrapper& data, long httpCode) const
 {
-    formattedResponse simAPIRes;
-    /*
-    Build the response to be equivalent to
-
-    <obj>
-        <f1>
-            Hello
-        </f1>
-        <f2>
-            There
-        </f2>
-    </obj>
-    <obj>
-        <f1>
-            Good
-        </f1>
-        <f2>
-            Day
-        </f2>
-    </obj>
-    */
+    switch (valueType)
     {
-        simAPIRes.children = std::vector<formattedResponse>();
-        simAPIRes.children->resize(2);
-        auto& vec = *simAPIRes.children;
-
-        vec[0].field = "obj";
-        vec[0].children = std::vector<formattedResponse>();
-        auto& v1 = *vec[0].children;
-        v1.resize(2);
-            v1[0].field = "f1";
-                v1[0].children = std::vector<formattedResponse>();
-                v1[0].children->resize(1);
-                (*v1[0].children)[0].field = "Hello";
-            v1[1].field = "f2";
-                v1[1].children = std::vector<formattedResponse>();
-                v1[1].children->resize(1);
-                (*v1[1].children)[0].field = "There";
-
-        vec[1].field = "obj";
-        vec[1].children = std::vector<formattedResponse>();
-        auto& v2 = *vec[1].children;
-        v2.resize(2);
-            v2[0].field = "f1";
-                v2[0].children = std::vector<formattedResponse>();
-                v2[0].children->resize(1);
-                (*v2[0].children)[0].field = "Good";
-            v2[1].field = "f2";
-                v2[1].children = std::vector<formattedResponse>();
-                v2[1].children->resize(1);
-                (*v2[1].children)[0].field = "Day";
+    case(state::access):
+    {
+        const auto maybeValues = data.search(std::get<std::string>(value));
+        assert(maybeValues.has_value());
+        const auto values = std::get<responseWrapper::stringContainer>(maybeValues.value().get());
+        assert(values.size() == 1);
+        source += values.front();
+        return;
     }
-
-
-    /*
-    Build the equivalent of the HTMT code:
-
-    <table><HTMT><tr><HTMT><th>[]</th></HTMT></tr></HTMT></table>
-
-    */
-    return translatedPage::
-        parseTags("<table><HTMT><tr><HTMT><th>[]</th></HTMT></tr></HTMT></table>")
-        .translate(gr);
+    case(state::HTML):
+        source += std::get<std::string>(value);
+        return;
+    case(state::translation):
+        std::get<std::unique_ptr<translation>>(value)->apply(source, data, httpCode);
+        return;
+    }
 }
+
+
+class webpageWrapper
+{
+protected:
+    static std::string readEntireFile(const std::string& filename)
+    {
+        std::ifstream input{ filename, std::ios::binary | std::ios::ate };
+        if (!input.is_open())
+        {
+            return "";
+        }
+        const auto end = input.tellg();
+        input.seekg(0);
+        std::string ret;
+        ret.resize(end);
+        input.read(ret.data(), end);
+        return ret;
+    }
+public:
+
+    virtual void operator()(uWS::HttpResponse<true>* res, uWS::HttpRequest* req) const = 0;
+    virtual void apply(uWS::HttpResponse<true>* res, uWS::HttpRequest* req) const = 0;
+
+};
+
+class forwardingWrapper final : public webpageWrapper
+{
+    translation data;
+
+    static void applyTranslation(uWS::HttpResponse<true>* res, const APIResponse& API, const translation& tran)
+    {
+        res->writeStatus(std::to_string(API.response_code));
+        for (const auto& i : API.headers)
+        {
+            res->writeHeader(i.first, i.second);
+        }
+        const auto resw = responseWrapper::fromData(API.response);
+        if (resw.has_value())
+        {
+            res->tryEnd(tran.apply(resw.value(), API.response_code));
+        }
+        else
+        {
+            res->tryEnd(API.response);
+        }
+    }
+
+    template <class Fn>
+    static void extractPostBody(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, Fn&& callback)
+    {
+        const size_t contentLength = [&]()->size_t
+        {
+            size_t val;
+            const auto header = req->getHeader("content-length");
+            const auto res = std::from_chars(header.data(), header.data() + header.size(), val);
+            if (res.ec != std::errc())
+                return 0;
+            return val;
+        }();
+
+        if (contentLength == 0)
+        {
+            callback(res, req, {});
+            return;
+        }
+
+        std::string contentBuffer;
+        contentBuffer.reserve(contentLength);
+
+
+        //Note that this is a callback which will be called outside the current function scope, ergo the body and callback must be copied
+        //This callback will be called multiple times, so the data it stores must be mutable so it can be accumulated
+        res->onData([res, req, callback = std::move(callback), buffer = std::move(contentBuffer)](std::string_view data, bool last) mutable
+        {
+            buffer.append(data.data(), data.size());
+            if (last)
+            {
+                callback(res, req, buffer);
+            }
+        });
+
+        res->onAborted([res]()
+            {
+                //Internal Server Error
+                res->writeStatus("500");
+                res->end();
+            });
+    }
+
+
+    static void forwardPost(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, requestWrapper&& curl, const translation& tran)
+    {
+        extractPostBody(res, req,
+            [curl = std::move(curl), &tran](uWS::HttpResponse<true>* res, uWS::HttpRequest* req, std::string_view body) mutable
+        {
+            applyTranslation(res, curl.post(body), tran);
+        }
+        );
+    }
+public:
+
+    forwardingWrapper() = default;
+    forwardingWrapper(const std::string& path) : data(translation::parse(readEntireFile(path))) {};
+    forwardingWrapper(translation&& tran) : data(std::move(tran)) {}
+
+    void operator()(uWS::HttpResponse<true>* res, uWS::HttpRequest* req) const final { apply(res, req); }
+
+    void apply(uWS::HttpResponse<true>* res, uWS::HttpRequest* req) const final
+    {
+        std::string url = "localhost:9001";
+        const auto path = req->getUrl();
+        url.append(path.data(), path.size());
+        const auto query = req->getQuery();
+        url.append(query.data(), query.size());
+        requestWrapper request(url);
+        request.setCookies(std::string{ req->getHeader("cookie") });
+        if (req->getMethod() == "post")
+        {
+            forwardPost(res, req, std::move(request), data);
+        }
+        else
+        {
+            applyTranslation(res, request.get(), data);
+        }
+    }
+};
+
+class staticWrapper final : public webpageWrapper
+{
+    std::string data;
+public:
+    staticWrapper() = default;
+    staticWrapper(const std::string& path) : data(readEntireFile(path)) {}
+
+    void operator()(uWS::HttpResponse<true>* res, uWS::HttpRequest* req) const final { apply(res, req); }
+
+    void apply(uWS::HttpResponse<true>* res, uWS::HttpRequest* req) const final
+    {
+        res->tryEnd(data);
+    }
+};
+
+/*
+<table><tr><th>Owner</th><th>Plate</th><th>Year</th></tr><HTMT:Vehicles><tr><td><HTMTVAL:Owner><tr><td><HTMTVAL:Plate><tr><td><HTMTVAL:Year></td></tr></HTMT></table>
+*/
+
+//std::string testTranslate()
+//{
+//    const auto expr = 
+//        translation::parse("<table><tr><th>Owner</th><th>Plate</th><th>Year</th></tr><HTMT:Vehicles><tr><td><HTMTVAL:Owner></td><td><HTMTVAL:Plate></td><td><HTMTVAL:Year></td></tr></HTMT></table>");
+//
+//    responseWrapper res;
+//    {
+//        {
+//            responseWrapper temp;
+//            temp.add("Owner", "A");
+//            temp.add("Plate", "ABC");
+//            temp.add("Year", "2000");
+//            res.add("Vehicles", std::move(temp));
+//        }
+//        {
+//            responseWrapper temp;
+//            temp.add("Owner", "B");
+//            temp.add("Plate", "DEF");
+//            temp.add("Year", "2005");
+//            res.add("Vehicles", std::move(temp));
+//        }
+//        {
+//            responseWrapper temp;
+//            temp.add("Owner", "C");
+//            temp.add("Plate", "GHI");
+//            temp.add("Year", "2010");
+//            res.add("Vehicles", std::move(temp));
+//        }
+//    }
+//
+//    translation populate;
+//    populate.tagName = "Vehicles";
+//    {
+//        populate.values.emplace_back(translationValue::asHTML("<tr><td>"));
+//        populate.values.emplace_back(translationValue::asAccess("Owner"));
+//        populate.values.emplace_back(translationValue::asHTML("</td><td>"));
+//        populate.values.emplace_back(translationValue::asAccess("Plate"));
+//        populate.values.emplace_back(translationValue::asHTML("</td><td>"));
+//        populate.values.emplace_back(translationValue::asAccess("Year"));
+//        populate.values.emplace_back(translationValue::asHTML("</td></tr>"));
+//    }
+//
+//    translation test;
+//    {
+//        test.values.emplace_back(translationValue::asHTML("<table><tr><th>Owner</th><th>Plate</th><th>Year</th></tr>"));
+//        test.values.emplace_back(translationValue::asTranslation(std::move(populate)));
+//        test.values.emplace_back(translationValue::asHTML("</table>"));
+//    }
+//    std::string out;
+//    //test.apply(out, res);
+//    expr.apply(out, res);
+//    return out;
+//}
 
 void discard()
 {
-
     uWS::SSLApp app;
     app.listen(9002, [](auto*) {});
     app.any("/*", forward);
+    //app.get("/t", [](auto* res, auto* req) {res->end(testTranslate()); });
+    app.get("/user/me", forwardingWrapper(
+        translation::parse("<table><tr><th>Username</th><th>Permissions</th></tr><HTMT:><tr><td><HTMTVAL:Username></td><td><HTMTVAL:Permissions></td></tr></HTMT></table>")));
     std::cout << "Ready to forward (9002).\n";
     app.run();
     std::cin.ignore();
 }
 
+
 void testConnect()
 {
     requestWrapper request("localhost:9001/request");
     const auto r1 = request.post("username=ADMIN&password=ADMIN");
-    request.retarget("localhost:9001/ping");
+    request.retarget("localhost:9001/user/me");
     const auto r2 = request.get();
+    const auto pr = responseWrapper::fromData(r2.response);
+    std::cout << pr.value().toData(true);
 
     std::cin.ignore();
 }
 
-int main(int argc, char** argv) 
+bool linkPages(uWS::SSLApp& app, const std::string& linkFile)
 {
-    discard();
-    requestWrapper request("localhost:9001/ping");
-    auto result = request.get();
-    testConnect();
+    std::ifstream input{ linkFile };
+    if (!input.is_open())
+    {
+        std::cout << "Unable to find link file.\n";
+        return false;
+    }
+
+    std::string line;
+    while (std::getline(input, line))
+    {
+        if (line.size() < 4 ||
+            (line[0] != 'P' && line[0] != 'G') ||
+            (line[1] != 'S' && line[1] != 'F') ||
+            line[2] != ':')
+        {
+            std::cout << "Invalid linkfile entry \"" + line + "\".\n";
+            return false;
+        }
+        auto div = std::find(line.cbegin() + 4, line.cend(), ':');
+        if (div == line.cend())
+        {
+            std::cout << "Invalid linkfile entry \"" + line + "\".\n";
+            return false;
+        }
+
+        const std::string webDirectory{ line.cbegin() + 3, div };
+        const std::string fileDirectory{ &*(div + 1), size_t(line.cend() - div - 1) };
+
+        if (line[0] == 'P')
+        {
+            if (line[1] == 'S')
+            {
+                app.post(webDirectory, staticWrapper(fileDirectory));
+            }
+            else
+            {
+                app.post(webDirectory, forwardingWrapper(fileDirectory));
+            }
+        }
+        else
+        {
+            if (line[1] == 'S')
+            {
+                app.get(webDirectory, staticWrapper(fileDirectory));
+            }
+            else
+            {
+                app.get(webDirectory, forwardingWrapper(fileDirectory));
+            }
+        }
+    }
+    return true;
+}
+
+int main(int argc, char** argv)
+{
+    //testTranslate();
+    //discard();
+    uWS::SSLApp app;
+    app.listen(9002, [](auto*) {});
+    app.any("/*", forward);
+    linkPages(app, "../Pages/Link.txt");
+    app.run();
     std::cin.ignore();
 }
