@@ -1,0 +1,4 @@
+GS:/home:../Pages/Home.html
+GS:/login:../Pages/Login.html
+PF:/request:../Pages/Login_Result.htmt
+GF:/user/me:../Pages/testForward.htmt
