@@ -5,4 +5,11 @@
 		<tr><td><HTMTVAL:Username></td><td><HTMTVAL:Permissions></td></tr>
 	</HTMT>
 </table>
+	<HTMT:>
+		You are logged in as a: 
+		<HTMTCOND:Permissions=3> Superuser.</HTMTCOND>
+		<HTMTCOND:Permissions=2> Manager.</HTMTCOND>
+		<HTMTCOND:Permissions=1> Employee.</HTMTCOND>
+		<HTMTCOND:Permissions=0> User.</HTMTCOND>
+	</HTMT>
 </html>

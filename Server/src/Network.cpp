@@ -5,14 +5,8 @@
 #include "WebRoutes/Vehicle.h"
 #include "WebRoutes/Services.h"
 
-void expr(std::string& val)
-{
-    std::cout << val;
-}
-
 void net()
 {
-    expr(std::string("Hello"));
     uWS::SSLApp app;
     app.listen(9001, [&](auto*){});
 
@@ -23,11 +17,15 @@ void net()
     app.post("/user/create", HttpCallWrapper(webRoute::createUser));
     app.get("/user/me", HttpCallWrapper(webRoute::getLocalUserData));
     app.get("/user/search", HttpCallWrapper(webRoute::searchUsers));
+    app.get("/user/select", HttpCallWrapper(webRoute::selectUser));
     app.post("/user/delete", HttpCallWrapper(webRoute::deleteUser));
     app.post("/user/update", HttpCallWrapper(webRoute::updateUser));
 
     app.post("/part/supplier/create", HttpCallWrapper(webRoute::createSupplier));
     app.post("/part/supplier/update", HttpCallWrapper(webRoute::updateSupplier));
+    app.get("/part/supplier/search", HttpCallWrapper(webRoute::searchSuppliers));
+    app.get("/part/supplier/select", HttpCallWrapper(webRoute::selectSupplier));
+
     app.post("/part/group/create", HttpCallWrapper(webRoute::createPartGroup));
     app.post("/part/group/update", HttpCallWrapper(webRoute::updatePartGroup));
     app.post("/part/create", HttpCallWrapper(webRoute::createPart));

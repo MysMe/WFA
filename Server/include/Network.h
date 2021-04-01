@@ -8,16 +8,18 @@
 #include <random>
 #include <charconv>
 #include "ServerData.h"
+#include "Response.h"
 
 namespace HTTPCodes
 {
-    constexpr auto OK               = "200";
-    constexpr auto NOCONTENT        = "204";
-    constexpr auto BADREQUEST       = "400";
-    constexpr auto UNAUTHORISED     = "401";
-    constexpr auto FORBIDDEN        = "403";
-    constexpr auto CONFLICT         = "409";
-    constexpr auto INTERNALERROR    = "500";
+    constexpr auto OK                   = "200";
+    constexpr auto NOCONTENT_NOREDIRECT = "204"; //Note that a browser recieving code 204 may choose to not redirect from the page
+    constexpr auto BADREQUEST           = "400";
+    constexpr auto UNAUTHORISED         = "401";
+    constexpr auto FORBIDDEN            = "403";
+    constexpr auto NOTFOUND             = "404";
+    constexpr auto CONFLICT             = "409";
+    constexpr auto INTERNALERROR        = "500";
 }
 
 template <class storageType>

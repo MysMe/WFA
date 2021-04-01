@@ -1,0 +1,36 @@
+<html>
+<HTMTCODE:200>
+	<HTMT:>
+		<form action="http://localhost:9002/users/modify/result" method="post">
+		
+			<input type="hidden" value="<HTMTVAL:ID>" name="ID">
+			
+			<label for="username">Username:</label>
+			<input type="text" name="username" value="<HTMTVAL:Username>"><br><br>
+			
+			<label for="password">Password (Not changed if blank):</label>
+			<input type="password" name="password"><br><br>
+			
+			<label for="permissions">Permissions:</label>
+			<input type="text" name="permissions" value="<HTMTVAL:Permissions>"><br><br>
+			<input type="submit" value="Submit">
+		</form>
+	</HTMT>
+</HTMTCODE>
+<HTMTCODE:404>
+	<H1>No user found!</H1>
+</HTMTCODE>
+<HTMTCODE:400>
+	<H1>Invalid request!</H1>
+</HTMTCODE>
+<HTMTCODE:403>
+	<H1>Invalid permissions!</H1>
+</HTMTCODE>
+<HTMTCODE:500>
+	<H1>Internal error!</H1>
+</HTMTCODE>
+<form action="http://localhost:9002/users" method="get">
+<input type="hidden" value="" name="username">
+<input type="submit" value="Return To Users" name="Submit" >
+</form>
+</html>

@@ -3,9 +3,9 @@
 
 std::string generateLIKEArgument(std::string_view val)
 {
-    std::string ret = "'%";
+    std::string ret = "%";
     ret.append(val.data(), val.size());
-    ret += "%'";
+    ret += "%";
     return ret;
 }
 
@@ -14,7 +14,7 @@ std::string generateUpdateStatement(const body& b, const std::unordered_map<std:
     std::string ret;
     for (const auto& [bodyElementName, tableElementName] : relations)
     {
-        if (!b.hasElement(bodyElementName))
+        if (!b.hasElement(bodyElementName) || b.getElement(bodyElementName).empty())
             continue;
 
         if (!ret.empty())

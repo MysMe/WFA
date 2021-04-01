@@ -91,10 +91,151 @@ public:
 
 class translationCondition
 {
+    //Given that everything is a string, it doesn't make sense to have numeric comparisons
+
+    struct subCondition
+    {
+        enum class condition
+        {
+            equal,
+            notEqual,
+            always
+            //The parse function relies on the ordering of this enum
+        };
+
+        condition action = condition::always;
+        std::string constant, variable;
+
+        bool check(const responseWrapper& data) const
+        {
+            auto isEqual = [&]()
+            {
+                const auto val = data.search(variable);
+                //Data must be present
+                if (!val.has_value())
+                    return false;
+                //Data must be strings (not subobjects)
+                if (val.value().get().index() != 0)
+                    return false;
+                //Data must be exactly one string
+                if (std::get<responseWrapper::stringContainer>(val.value().get()).size() != 1)
+                    return false;
+                //Check equality
+                return std::get<responseWrapper::stringContainer>(val.value().get()).front() == constant;
+            };
+
+            switch (action)
+            {
+            default:
+                return true;
+            case(condition::equal):
+                return isEqual();
+            case(condition::notEqual):
+                return !isEqual();
+            }
+        }
+    };
+
+    enum class conjunction
+    {
+        and,
+        or
+        //The parse function relies on the ordering of this enum
+    };
+
+    std::vector<subCondition> conditions;
+    std::vector<conjunction> conjunctions;
+
+    static bool applyConjunction(bool left, conjunction val, bool right)
+    {
+        switch (val)
+        {
+        default:
+            return true;
+        case(conjunction::and):
+            return left && right;
+        case(conjunction::or):
+            return left || right;
+        }
+    }
+
+    static subCondition parseSubCondition(std::string_view source)
+    {
+        static const std::vector<char> operators{ '=', '!' };
+
+        subCondition::condition type = subCondition::condition::equal;
+        size_t div = std::string_view::npos;
+        for (size_t i = 0; i < operators.size(); i++)
+        {
+            div = source.find(operators[i]);
+            if (div != std::string_view::npos)
+            {
+                type = static_cast<subCondition::condition>(i);
+                break;
+            }
+        }
+
+        //If nothing was found, return a default condition (always true)
+        if (div == std::string_view::npos)
+            return subCondition();
+
+        subCondition ret;
+        ret.action = type;
+        ret.variable.assign(source.cbegin(), source.cbegin() + div);
+        ret.constant.assign(source.cbegin() + div + 1, source.cend());
+        return ret;
+    }
+
 public:
     bool check(const responseWrapper& data) const
     {
-        return true;
+        if (conditions.empty())
+            return true;
+        bool currentState = conditions[0].check(data);
+        for (size_t i = 1; i < conditions.size(); i++)
+        {
+            currentState = applyConjunction(currentState, conjunctions[i - 1], conditions[i].check(data));
+        }
+        return currentState;
+    }
+
+    static translationCondition parse(std::string_view source)
+    {
+        static const std::vector<char> divisors{ '&', '|' };
+
+        size_t left = 0;
+        translationCondition ret;
+        while (left != std::string_view::npos)
+        {
+            size_t div = std::string_view::npos;
+            conjunction type;
+            for (size_t i = 0; i < divisors.size(); i++)
+            {
+                auto temp = source.find(divisors[i], left);
+                if (temp < div)
+                {
+                    div = temp;
+                    type = static_cast<conjunction>(i);
+                }
+            }
+
+            std::string_view contents(source.data() + left,
+                ((div == std::string::npos) ? source.size() : div) - left);
+
+            ret.conditions.emplace_back(parseSubCondition(contents));
+            if (div != std::string_view::npos)
+            {
+                ret.conjunctions.push_back(type);
+                left = div + 1;
+            }
+            else
+            {
+                break;
+            }
+        }
+        assert(ret.conditions.size() == ret.conjunctions.size() + 1);
+
+        return ret;
     }
 };
 
@@ -106,10 +247,11 @@ class translation
         tag,
         code,
         condition
+        //The parse function relies on the ordering of this enum
     };
 
     matchType match = matchType::always;
-    std::variant<std::string, unsigned long, translationCondition> tag;
+    std::variant<std::string, long, translationCondition> tag;
 
     std::vector<translationValue> values;
 
@@ -145,27 +287,30 @@ class translation
         }
     }
 
-    bool matches(const responseWrapper& data, unsigned long httpCode) const
+    bool matches(const responseWrapper& data, long httpCode) const
     {
         switch (match)
         {
         default:
             return true;
         case(matchType::code):
-            return httpCode == std::get<unsigned long>(tag);
+            return httpCode == std::get<long>(tag);
         case(matchType::condition):
             return std::get<translationCondition>(tag).check(data);
         }
     }
 
-    template <typename... T>
-    static std::array<size_t, sizeof...(T)> findNextSet(std::string_view source, T... strings)
+    
+    static std::vector<size_t> findNextSet(std::string_view source, const std::vector<std::string_view>& strings)
     {
-        return std::array<size_t, sizeof...(T)>
+        std::vector<size_t> ret(strings.size());
+        for (size_t i = 0; i < strings.size(); i++)
         {
-            source.find(strings.data()), ...
-        };
+            ret[i] = source.find(strings[i].data());
+        }
+        return ret;
     }
+
 
 public:
 
@@ -220,79 +365,78 @@ public:
     static translation parse(std::string_view source)
     {
         //Divide the string by ever instance of "<HTMT:", "<HTMTVAL:" and "<HTMTCOND:" and their respective closing tags
-        std::vector<std::string_view> subsections;
         {
-            size_t left = 0;
-            auto found = findNextSet(std::string_view(source.data() + left, source.size() - left), "<HTMT:", "<HTMTVAL:", "<HTMTCOND:");
-        }
+            //Order must match order of matchType
+            static const std::vector<std::string_view> tagOpens{ "<HTMT:", "<HTMTCODE:", "<HTMTCOND:" };
+            //Order must match order of tagOpens
+            static const std::vector<std::string_view> tagCloses{ "</HTMT>", "</HTMTCODE>", "</HTMTCOND>" };
 
-
-
-
-
-
-        translation ret;
-        auto left = source.cbegin();
-        while (left != source.cend())
-        {
-            constexpr std::string_view objectTag = "<HTMT:";
-            constexpr std::string_view objectClose = "</HTMT>";
-            constexpr std::string_view codeTag = "<HTMTCODE:";
-            constexpr std::string_view codeClose = "</HTMTCODE>";
-
-            //Iterator to the first <HTMT:> or <HTMTCODE:> tag
-            std::string_view::const_iterator it;
-            //Determines the type of tag it refers to
-            matchType type;
+            translation ret;
             {
-                const std::string_view str{ &*left, size_t(source.cend() - left) };
-                auto tagPos = str.find(objectTag);
-                if (tagPos == std::string_view::npos)
-                    tagPos = str.size();
-                const auto codePos = std::string_view{ &*left, tagPos }.find(codeTag);
-                if (codePos < tagPos)
+                size_t left = 0;
+                while (left != std::string_view::npos)
                 {
-                    it = left + codePos;
-                    type = matchType::code;
-                }
-                else
-                {
-                    it = left + tagPos;
-                    type = matchType::tag;
+                    matchType type;
+                    auto found = findNextSet(std::string_view(source.data() + left, source.size() - left), tagOpens);
+
+                    //This is relative to left, not to source.data()
+                    auto min = std::min_element(found.cbegin(), found.cend());
+                    const auto tagIndex = std::distance(found.cbegin(), min);
+
+                    //That the order of the search values must match the order of matchType declarations
+                    type = static_cast<matchType>(tagIndex + 1);
+
+                    if (*min == std::string_view::npos)
+                    {
+                        //No tag found, everything else is plain HTML
+                        parseSubHTML(ret, std::string_view(source.data() + left, source.size() - left));
+                        //Nothing left to parse, end loop
+                        break;
+                    }
+                    else if (*min != 0)
+                    {
+                        //A tag was found and had some HTML before it
+                        parseSubHTML(ret, std::string_view(source.data() + left, *min));
+                    }
+                    const auto tagStart = left + *min;
+                    const auto tagClose = std::find(source.cbegin() + tagStart + tagOpens[tagIndex].size(), source.cend(), '>');
+                    const auto end = tagSearch(source.cbegin() + tagStart, source.cend(), tagOpens[tagIndex], tagCloses[tagIndex]);
+
+                    translation temp = parse(std::string_view{ &*(tagClose + 1), size_t(std::distance(tagClose + 1, end) - tagCloses[tagIndex].size()) });
+                    temp.match = type;
+
+
+                    const std::string_view tagContents(source.data() + tagStart + tagOpens[tagIndex].size(),
+                        std::distance(source.cbegin(), tagClose) - tagStart - tagOpens[tagIndex].size());
+
+                    switch (type)
+                    {
+                    default:
+                        assert("Invalid match type provided.");
+                    case(matchType::tag):
+                        if (tagContents.empty())
+                        {
+                            //Special case for empty <HTMT:> tags
+                            temp.match = matchType::always;
+                        }
+                        else
+                        {
+                            temp.tag = std::string(tagContents);
+                        }
+                        break;
+                    case(matchType::code):
+                        temp.tag = std::stol(tagContents.data());
+                        break;
+                    case(matchType::condition):
+                        temp.tag = translationCondition::parse(tagContents);
+                        break;
+                    }
+                    ret.values.emplace_back(std::move(temp));
+                    left = std::distance(source.cbegin(), end);
                 }
             }
-
-            //Leading text may be empty
-            if (left != it)
-                parseSubHTML(ret, std::string_view(&*left, it - left));
-
-            //There may not be any tags
-            if (it == source.cend())
-                break;
-
-            //Find the end of the tag
-            const auto tagEnd = (type == matchType::code)
-                ? tagSearch(it, source.cend(), codeTag, codeClose)
-                : tagSearch(it, source.cend(), objectTag, objectClose);
-
-            //Find the end minus the closing tag
-            const auto subEnd = tagEnd - ((type == matchType::code) ? codeClose.size() : objectClose.size());
-
-            //Find the closing bracket of the opening <HTMT:XXX>
-            const auto tagValueEnd = std::find(it, source.cend(), '>');
-
-            //The next character is the first in the sub-translation
-            const auto subBegin = std::next(tagValueEnd);
-
-            //Parse the internal text as a translation
-            translation sub = translation::parse(std::string_view(&*subBegin, subEnd - subBegin));
-            //sub.tagName.assign(it + ((type == matchType::code) ? codeTag.size() : objectTag.size()), tagValueEnd);
-            sub.match = type;
-            ret.values.emplace_back(std::move(sub));
-
-            left = tagEnd;
+            return ret;
         }
-        return ret;
     }
 };
 
@@ -303,7 +447,11 @@ void translationValue::apply(std::string& source, const responseWrapper& data, l
     case(state::access):
     {
         const auto maybeValues = data.search(std::get<std::string>(value));
-        assert(maybeValues.has_value());
+        if (!maybeValues.has_value())
+        {
+            std::cout << "Warning: Value \"" + std::get<std::string>(value) + "\" was not present in reponse.\n";
+            return;
+        }
         const auto values = std::get<responseWrapper::stringContainer>(maybeValues.value().get());
         assert(values.size() == 1);
         source += values.front();
@@ -346,6 +494,7 @@ public:
 class forwardingWrapper final : public webpageWrapper
 {
     translation data;
+    std::string destination;
 
     static void applyTranslation(uWS::HttpResponse<true>* res, const APIResponse& API, const translation& tran)
     {
@@ -420,18 +569,20 @@ class forwardingWrapper final : public webpageWrapper
 public:
 
     forwardingWrapper() = default;
-    forwardingWrapper(const std::string& path) : data(translation::parse(readEntireFile(path))) {};
-    forwardingWrapper(translation&& tran) : data(std::move(tran)) {}
+    forwardingWrapper(const std::string& path, const std::string& dest) : data(translation::parse(readEntireFile(path))), destination(dest) {};
 
     void operator()(uWS::HttpResponse<true>* res, uWS::HttpRequest* req) const final { apply(res, req); }
 
     void apply(uWS::HttpResponse<true>* res, uWS::HttpRequest* req) const final
     {
         std::string url = "localhost:9001";
-        const auto path = req->getUrl();
-        url.append(path.data(), path.size());
+        url += destination;
         const auto query = req->getQuery();
-        url.append(query.data(), query.size());
+        if (!query.empty())
+        {
+            url += '?';
+            url.append(query.data(), query.size());
+        }
         requestWrapper request(url);
         request.setCookies(std::string{ req->getHeader("cookie") });
         if (req->getMethod() == "post")
@@ -524,8 +675,8 @@ void discard()
     app.listen(9002, [](auto*) {});
     app.any("/*", forward);
     //app.get("/t", [](auto* res, auto* req) {res->end(testTranslate()); });
-    app.get("/user/me", forwardingWrapper(
-        translation::parse("<table><tr><th>Username</th><th>Permissions</th></tr><HTMT:><tr><td><HTMTVAL:Username></td><td><HTMTVAL:Permissions></td></tr></HTMT></table>")));
+    //app.get("/user/me", forwardingWrapper(
+    //    translation::parse("<table><tr><th>Username</th><th>Permissions</th></tr><HTMT:><tr><td><HTMTVAL:Username></td><td><HTMTVAL:Permissions></td></tr></HTMT></table>")));
     std::cout << "Ready to forward (9002).\n";
     app.run();
     std::cin.ignore();
@@ -556,6 +707,8 @@ bool linkPages(uWS::SSLApp& app, const std::string& linkFile)
     std::string line;
     while (std::getline(input, line))
     {
+        if (line.empty() || line[0] == '#')
+            continue;
         if (line.size() < 4 ||
             (line[0] != 'P' && line[0] != 'G') ||
             (line[1] != 'S' && line[1] != 'F') ||
@@ -572,28 +725,36 @@ bool linkPages(uWS::SSLApp& app, const std::string& linkFile)
         }
 
         const std::string webDirectory{ line.cbegin() + 3, div };
-        const std::string fileDirectory{ &*(div + 1), size_t(line.cend() - div - 1) };
 
-        if (line[0] == 'P')
+        if (line[1] == 'S')
         {
-            if (line[1] == 'S')
+            const std::string fileDirectory{ div + 1, line.cend() };
+            std::cout << "Linked page \"" + webDirectory + "\" to local page \"" + fileDirectory + "\".\n";
+            if (line[0] == 'P')
             {
                 app.post(webDirectory, staticWrapper(fileDirectory));
             }
             else
             {
-                app.post(webDirectory, forwardingWrapper(fileDirectory));
+                app.get(webDirectory, staticWrapper(fileDirectory));
             }
         }
         else
         {
-            if (line[1] == 'S')
+            const auto secDiv = std::find(div + 1, line.cend(), ':');
+            const std::string fileDirectory{ div + 1, secDiv };
+            const std::string target = 
+            secDiv == line.cend() ? webDirectory : std::string{ secDiv + 1, line.cend() };
+
+            std::cout << "Linked page \"" + webDirectory + "\" to local page \"" + fileDirectory + "\", which forwards to \"" + target + "\".\n";
+
+            if (line[0] == 'P')
             {
-                app.get(webDirectory, staticWrapper(fileDirectory));
+                app.post(webDirectory, forwardingWrapper(fileDirectory, target));
             }
             else
             {
-                app.get(webDirectory, forwardingWrapper(fileDirectory));
+                app.get(webDirectory, forwardingWrapper(fileDirectory, target));
             }
         }
     }
@@ -606,8 +767,9 @@ int main(int argc, char** argv)
     //discard();
     uWS::SSLApp app;
     app.listen(9002, [](auto*) {});
-    app.any("/*", forward);
+    app.any("/*", [](auto* req, auto* res) {req->end("Bad translation."); });
     linkPages(app, "../Pages/Link.txt");
+    std::cout << "Linking complete.\n";
     app.run();
     std::cin.ignore();
 }

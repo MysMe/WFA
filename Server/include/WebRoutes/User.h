@@ -142,6 +142,80 @@ namespace webRoute
 
         if (result.rowCount() != 0)
         {
+            responseWrapper response;
+            for (size_t i = 0; i < result.rowCount(); i++)
+            {
+                const auto [vehStatus, vehResult] =
+                    serverData::database->query(
+                        "SELECT V.PLATE, VS.MAKE, VS.MODEL, V.YEAR, V.COLOUR FROM VEHICLES AS V INNER JOIN VEHICLESHAREDDATA AS VS ON V.BASE = VS.ID WHERE V.OWNER = :USR;", { {":USR", result[i][0]} });
+
+                if (!vehStatus)
+                {
+                    //Internal Server Error
+                    res->writeStatus(HTTPCodes::INTERNALERROR);
+                    res->end();
+                    return;
+                }
+
+                responseWrapper temp;
+                temp.add("ID", result[i][0]);
+                temp.add("Username", result[i][1]);
+                temp.add("Permissions", result[i][2]);
+                for (size_t u = 0; u < vehResult.rowCount(); u++)
+                {
+                    responseWrapper vehicleResponse;
+                    vehicleResponse.add("Vehicle plate", vehResult[u][0]);
+                    vehicleResponse.add("Vehicle Make", vehResult[u][1]);
+                    vehicleResponse.add("Vehicle Model", vehResult[u][2]);
+                    vehicleResponse.add("Vehicle Year", vehResult[u][3]);
+                    vehicleResponse.add("Vehicle Colour", vehResult[u][4]);
+                    temp.add("Vehicles", std::move(temp), true);
+                }
+                response.add("Users", std::move(temp));
+            }
+            res->tryEnd(response.toData(false));
+            return;
+        }
+        else
+        {
+            //No content
+            res->writeStatus(HTTPCodes::NOTFOUND);
+        }
+        res->end();
+    }
+
+    void selectUser(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body& b, const query& q)
+    {
+        if (!q.hasElement("ID"))
+        {
+            //Bad Request - Invalid arguments
+            res->writeStatus(HTTPCodes::BADREQUEST);
+            res->end();
+            return;
+        }
+
+        if (!serverData::auth->verify(req, authLevel::employee))
+        {
+            //Forbidden - Insufficient permissions
+            res->writeStatus(HTTPCodes::FORBIDDEN);
+            res->end();
+            return;
+        }
+
+        std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") selected user (\"" << q.getElement("ID") << "\").\n";
+
+        const auto [status, result] = serverData::database->query("SELECT ID, USERNAME, PERMISSIONS FROM " + serverData::tableNames[serverData::USER] + " WHERE ID = :ID",
+            { {":ID", q.getElement("ID")} });
+        if (!status)
+        {
+            //Internal Server Error
+            res->writeStatus(HTTPCodes::INTERNALERROR);
+            res->end();
+            return;
+        }
+
+        if (result.rowCount() != 0)
+        {
 
             const auto [vehStatus, vehResult] =
                 serverData::database->query(
@@ -156,6 +230,7 @@ namespace webRoute
             }
 
             responseWrapper response;
+            response.add("ID", result[0][0]);
             response.add("Username", result[0][1]);
             response.add("Permissions", result[0][2]);
             for (size_t i = 0; i < vehResult.rowCount(); i++)
@@ -174,14 +249,15 @@ namespace webRoute
         else
         {
             //No content
-            res->writeStatus(HTTPCodes::NOCONTENT);
+            res->writeStatus(HTTPCodes::NOTFOUND);
         }
         res->end();
     }
 
+
     void deleteUser(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body& b, const query& q)
     {
-        if (!b.hasElement("username"))
+        if (!b.hasElement("ID"))
         {
             //Bad Request - Invalid arguments
             res->writeStatus(HTTPCodes::BADREQUEST);
@@ -197,7 +273,7 @@ namespace webRoute
             return;
         }
 
-        const auto [pstatus, presult] = serverData::database->query("SELECT PERMISSIONS FROM " + serverData::tableNames[serverData::USER] + " WHERE USERNAME = :USR", { {":USR", b.getElement("username")} });
+        const auto [pstatus, presult] = serverData::database->query("SELECT PERMISSIONS FROM " + serverData::tableNames[serverData::USER] + " WHERE ID = :ID", { {":ID", b.getElement("ID")} });
         if (!pstatus)
         {
             //Internal Server Error
@@ -251,7 +327,7 @@ namespace webRoute
 
     void updateUser(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body& b, const query& q)
     {
-        if (!b.hasElement("username"))
+        if (!b.hasElement("ID"))
         {
             //Bad Request - Invalid arguments
             res->writeStatus(HTTPCodes::BADREQUEST);
@@ -289,7 +365,7 @@ namespace webRoute
         }
 
         {
-            const auto [pstatus, presult] = serverData::database->query("SELECT PERMISSIONS FROM " + serverData::tableNames[serverData::USER] + " WHERE USERNAME = :USR", { {":USR", b.getElement("username")} });
+            const auto [pstatus, presult] = serverData::database->query("SELECT PERMISSIONS FROM " + serverData::tableNames[serverData::USER] + " WHERE ID = :ID", { {":ID", b.getElement("ID")} });
             if (!pstatus)
             {
                 //Internal Server Error
@@ -327,7 +403,7 @@ namespace webRoute
 
         }
 
-        const std::string updateStatement = generateUpdateStatement(b, { {"rename", "USERNAME"}, {"password", "PASSWORD"}, {"permissions", "PERMISSIONS"} });
+        const std::string updateStatement = generateUpdateStatement(b, { {"username", "USERNAME"}, {"password", "PASSWORD"}, {"permissions", "PERMISSIONS"} });
 
         if (updateStatement.empty())
         {
@@ -337,7 +413,7 @@ namespace webRoute
             return;
         }
 
-        const auto [status, result] = serverData::database->query("UPDATE " + serverData::tableNames[serverData::USER] + " SET " + updateStatement + " WHERE USERNAME = :USR", { {":USR", b.getElement("username")} });
+        const auto [status, result] = serverData::database->query("UPDATE " + serverData::tableNames[serverData::USER] + " SET " + updateStatement + " WHERE ID = :ID", { {":ID", b.getElement("ID")} });
 
         if (!status)
         {
@@ -345,7 +421,7 @@ namespace webRoute
             res->writeStatus(HTTPCodes::INTERNALERROR);
         }
 
-        std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") updated user (\"" << q.getElement("username") << "\").\n";
+        std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") updated user (\"" << b.getElement("ID") << "\").\n";
         res->end();
     }
 

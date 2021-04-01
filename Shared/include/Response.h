@@ -264,14 +264,14 @@ public:
                 return ret;
             }
             const std::string_view key{ &*left, size_t(div - left) };
-            const char next = *std::next(div);
+            const auto next = std::next(div);
 
-            ret.forcedArrays.push_back(next == '[');
+            ret.forcedArrays.push_back(*next == '[');
 
-            if (next == '{')
+            if (*next == '{')
             {
-                const auto blockEnd = match(std::next(div), end, '{', '}');
-                auto val = fromData(std::string_view(&next, &*blockEnd - &next));
+                const auto blockEnd = match(next, end, '{', '}');
+                auto val = fromData(std::string_view(&*next, size_t(blockEnd - div)));
                 if (!val.has_value())
                     return std::nullopt;
                 ret.elements.emplace_back(key, elementContainer{ std::vector<responseWrapper>{std::move(val.value())} });
@@ -280,9 +280,8 @@ public:
                     ++left;
                 continue;
             }
-            else if (next == '[')
+            else if (*next == '[')
             {
-                //##
                 const auto blockEnd = match(std::next(div), end, '[', ']');
                 auto subleft = div + 2;
                 if (*subleft == '{')
@@ -300,15 +299,15 @@ public:
                     auto add = [&]()
                     {
                         auto subdiv = match(subleft, blockEnd, '{', '}');
-                        auto val = fromData({ &*subleft, size_t(subdiv - subleft) });
+                        auto val = fromData({ &*subleft, size_t(subdiv - subleft) + 1 });
                         if (!val.has_value())
                             return FAILED;
                         elements.emplace_back(std::move(val.value()));
 
                         subleft = subdiv;
-                        if (subdiv == blockEnd)
+                        if (subdiv == blockEnd - 1)
                             return ADDED_AT_END;
-                        ++subleft;
+                        subleft += 2;
                         return ADDED;
                     };
 

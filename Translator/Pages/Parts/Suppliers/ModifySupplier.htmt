@@ -1,0 +1,36 @@
+<html>
+<HTMTCODE:200>
+	<HTMT:>
+		<form action="http://localhost:9002/suppliers/modify/result" method="post">
+		
+			<input type="hidden" value="<HTMTVAL:ID>" name="ID">
+			
+			<label for="name">Name:</label>
+			<input type="text" name="name" value="<HTMTVAL:Name>"><br><br>
+			
+			<label for="phone">Phone:</label>
+			<input type="text" name="phone" value="<HTMTVAL:Phone>"><br><br>
+			
+			<label for="email">Email:</label>
+			<input type="text" name="email" value="<HTMTVAL:Email>"><br><br>
+			<input type="submit" value="Submit">
+		</form>
+	</HTMT>
+</HTMTCODE>
+<HTMTCODE:404>
+	<H1>No supplier found!</H1>
+</HTMTCODE>
+<HTMTCODE:400>
+	<H1>Invalid request!</H1>
+</HTMTCODE>
+<HTMTCODE:403>
+	<H1>Invalid permissions!</H1>
+</HTMTCODE>
+<HTMTCODE:500>
+	<H1>Internal error!</H1>
+</HTMTCODE>
+<form action="http://localhost:9002/suppliers" method="get">
+<input type="hidden" value="" name="searchterm">
+<input type="submit" value="Return To Suppliers" name="Submit" >
+</form>
+</html>

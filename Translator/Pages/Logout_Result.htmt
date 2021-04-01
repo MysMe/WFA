@@ -1,9 +1,9 @@
 <html>
 <HTMTCODE:200>
-	<H1>Logged In Successfully!</H1>
+	<H1>Logged Out Successfully!</H1>
 </HTMTCODE>
 <HTMTCODE:401>
-	<H1>Failed to log in!</H1>
+	<H1>Failed to log out!</H1>
 </HTMTCODE>
 	<form action="http://localhost:9002/home" method="get">
 		<input type="submit" value="Back to Home page" 

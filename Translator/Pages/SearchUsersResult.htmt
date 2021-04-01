@@ -1,0 +1,31 @@
+<html>
+<HTMTCODE:200>
+	<H1>Users found:</H1>
+	<table>
+		<tr><th>Username</th><th>Permissions</th><th>Modify</th><th>Delete</th></tr>
+		<HTMT:>
+			<tr><td><HTMTVAL:Username></td><td><HTMTVAL:Permissions></td>
+				<td><form action="http://localhost:9002/wrap/user/modify" method="get">
+					<input type="hidden" value="<HTMTVAL:ID>" name="ID" id="ID">
+					<input type="submit" value="Modify" 
+					name="Submit" id="submit" /></td>
+				<td><form action="http://localhost:9002/user/delete" method="post">
+					<input type="hidden" value="<HTMTVAL:ID>" name="ID" id="ID">
+					<input type="submit" value="Delete" 
+					name="Submit" id="submit" /></td></tr>
+		</HTMT>
+	</table>
+</HTMTCODE>
+<HTMTCODE:404>
+	<H1>No users found!</H1>
+</HTMTCODE>
+<HTMTCODE:400>
+	<H1>Invalid request!</H1>
+</HTMTCODE>
+<HTMTCODE:403>
+	<H1>Invalid permissions!</H1>
+</HTMTCODE>
+<HTMTCODE:500>
+	<H1>Internal error!</H1>
+</HTMTCODE>
+</html>

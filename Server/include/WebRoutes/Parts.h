@@ -95,6 +95,109 @@ namespace webRoute
         res->end();
     }
 
+    void searchSuppliers(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body& b, const query& q)
+    {
+        if (!q.hasElement("searchterm"))
+        {
+            //Bad Request - Invalid arguments
+            res->writeStatus(HTTPCodes::BADREQUEST);
+            res->end();
+            return;
+        }
+
+        if (!serverData::auth->verify(req, authLevel::employee))
+        {
+            //Forbidden - Insufficient permissions
+            res->writeStatus(HTTPCodes::FORBIDDEN);
+            res->end();
+            return;
+        }
+
+        std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") searched for supplier with keyword \"" << q.getElement("searchterm") << "\".\n";
+
+        const auto [status, result] = serverData::database->query("SELECT ID, NAME, PHONE, EMAIL FROM " + serverData::tableNames[serverData::SUPPLIERS] + 
+            " WHERE NAME LIKE :VAL OR NAME LIKE :VAL OR PHONE LIKE :VAL OR EMAIL LIKE :VAL",
+            { {":VAL", generateLIKEArgument(q.getElement("searchterm"))} });
+        if (!status)
+        {
+            //Internal Server Error
+            res->writeStatus(HTTPCodes::INTERNALERROR);
+            res->end();
+            return;
+        }
+
+        if (result.rowCount() != 0)
+        {
+            responseWrapper response;
+            for (size_t i = 0; i < result.rowCount(); i++)
+            {
+                responseWrapper temp;
+                temp.add("ID", result[i][0]);
+                temp.add("Name", result[i][1]);
+                temp.add("Phone", result[i][2]);
+                temp.add("Email", result[i][3]);
+                response.add("Suppliers", std::move(temp));
+            }
+            res->tryEnd(response.toData(false));
+            return;
+        }
+        else
+        {
+            //No content
+            res->writeStatus(HTTPCodes::NOTFOUND);
+        }
+        res->end();
+    }
+
+    void selectSupplier(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body& b, const query& q)
+    {
+        if (!q.hasElement("ID"))
+        {
+            //Bad Request - Invalid arguments
+            res->writeStatus(HTTPCodes::BADREQUEST);
+            res->end();
+            return;
+        }
+
+        if (!serverData::auth->verify(req, authLevel::employee))
+        {
+            //Forbidden - Insufficient permissions
+            res->writeStatus(HTTPCodes::FORBIDDEN);
+            res->end();
+            return;
+        }
+
+        std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") selected supplier (\"" << q.getElement("ID") << "\").\n";
+
+        const auto [status, result] = serverData::database->query("SELECT ID, NAME, PHONE, EMAIL FROM " + serverData::tableNames[serverData::SUPPLIERS] + " WHERE ID = :ID",
+            { {":ID", q.getElement("ID")} });
+        if (!status)
+        {
+            //Internal Server Error
+            res->writeStatus(HTTPCodes::INTERNALERROR);
+            res->end();
+            return;
+        }
+
+        if (result.rowCount() != 0)
+        {
+            responseWrapper response;
+            response.add("ID", result[0][0]);
+            response.add("Name", result[0][1]);
+            response.add("Phone", result[0][2]);
+            response.add("Email", result[0][3]);
+            res->tryEnd(response.toData(false));
+            return;
+        }
+        else
+        {
+            //No content
+            res->writeStatus(HTTPCodes::NOTFOUND);
+        }
+        res->end();
+    }
+
+
 
     void createPartGroup(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body& b, const query& q)
     {
@@ -176,17 +279,6 @@ namespace webRoute
         {
             //Forbidden - Insufficient permissions
             res->writeStatus(HTTPCodes::FORBIDDEN);
-            res->end();
-            return;
-        }
-
-
-
-        const auto [supstatus, supresult] = serverData::database->query("SELECT ID FROM " + serverData::tableNames[serverData::SUPPLIERS] + " WHERE NAME = :SUP", { {":SUP", b.getElement("supplier")} });
-        if (!supstatus || supresult.rowCount() != 1)
-        {
-            //Internal server error
-            res->writeStatus(HTTPCodes::INTERNALERROR);
             res->end();
             return;
         }
