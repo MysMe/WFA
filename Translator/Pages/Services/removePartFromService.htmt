@@ -1,0 +1,27 @@
+<html>
+	<HTMTCODE:200>
+		<H1>Edit Service:</H1>
+		<form action="http://localhost:9002/services/authorised/part/remove/result" method="post">
+			<input type="hidden" value="<HTMTVAL:entry>" name="entry" readonly><br>
+			Part ID:
+			<input type="text" value="<HTMTVAL:partID>" name="partID" readonly><br>
+			Current Quantity:
+			<input type="text" value="<HTMTVAL:quantity>" readonly>
+			Number to remove:
+			<input type="number" value="1" name="quantity" required><br>
+			<input type="submit" value="Remove">
+		</form>
+	</HTMTCODE>
+	<HTMTCODE:404>
+		<H1>No service found!</H1>
+	</HTMTCODE>
+	<HTMTCODE:400>
+		<H1>Invalid request!</H1>
+	</HTMTCODE>
+	<HTMTCODE:403>
+		<H1>Invalid permissions!</H1>
+	</HTMTCODE>
+	<HTMTCODE:500>
+		<H1>Internal error!</H1>
+	</HTMTCODE>
+</html>

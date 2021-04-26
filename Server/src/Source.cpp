@@ -105,12 +105,22 @@ void autoexec(sqlite3DB& DB, const std::string_view& args)
     std::cout << "Done.\n";
 }
 
+void load(sqlite3DB& DB, const std::string_view& args)
+{
+    DB = sqlite3DB(args);
+    if (!DB.isOpen())
+        std::cout << "Failed to open " << args << ".\n";
+    else
+        std::cout << "Opened DB file.\n";
+}
+
 std::unordered_map<std::string, std::function<void(sqlite3DB&, const std::string_view&)>> generateControlSequences()
 {
     decltype(generateControlSequences()) ret;
     ret["dt"] = displayTables;
     ret["dr"] = displayRows;
     ret["ax"] = autoexec;
+    ret["ld"] = load;
     return ret;
 }
 

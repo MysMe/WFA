@@ -5,7 +5,7 @@ namespace webRoute
 {
     void authenticate(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body& b, const query& q)
     {
-        if (!b.containsAll({ "username", "password" }))
+        if (!b.containsAll({ "username", "password" }) || b.getElement("username").empty() || b.getElement("password").empty())
         {
             //Bad Request - Invalid arguments.
             res->writeStatus(HTTPCodes::BADREQUEST);
@@ -19,6 +19,33 @@ namespace webRoute
         }
         res->end();
     }
+
+    //Both adds an account and authenticates it in a single transaction
+    void registerUser(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body& b, const query& q)
+    {
+        if (!b.containsAll({ "username", "password" }))
+        {
+            //Bad Request - Invalid arguments
+            res->writeStatus(HTTPCodes::BADREQUEST);
+            res->end();
+            return;
+        }
+        const auto [status, result] = serverData::database->query("INSERT INTO " + serverData::tableNames[serverData::USER] + " (ID, USERNAME, PASSWORD, PERMISSIONS) VALUES (NULL, :USR, :PAS, 1);", {
+                {":USR", std::string(b.getElement("username"))},
+                {":PAS", std::string(b.getElement("password"))} });
+
+        if (!status)
+        {
+            //Internal server error
+            res->writeStatus(HTTPCodes::INTERNALERROR);
+        }
+        else
+        {
+            std::cout << "Created new client (\"" << b.getElement("username") << "\").\n";
+        }
+        authenticate(res, req, b, q);
+    }
+
 
     void deauthenticate(uWS::HttpResponse<true>* res, uWS::HttpRequest* req)
     {

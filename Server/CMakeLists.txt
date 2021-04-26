@@ -13,7 +13,10 @@ add_subdirectory(include)
 target_include_directories(${PROJECT_NAME} PRIVATE ../Shared/include)
 add_subdirectory(../Shared/include build)
 
+find_package(CURL CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
 
+#
 
 #Dependencies for uWebSockets
 

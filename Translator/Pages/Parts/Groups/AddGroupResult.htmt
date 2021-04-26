@@ -1,0 +1,19 @@
+<html>
+	<HTMTCODE:200>
+		<H1>Group created!</H1>
+	</HTMTCODE>
+	<HTMTCODE:400>
+		<H1>Invalid request!</H1>
+	</HTMTCODE>
+	<HTMTCODE:403>
+		<H1>Invalid permissions!</H1>
+	</HTMTCODE>
+	<HTMTCODE:500>
+		<H1>Internal error!</H1>
+	</HTMTCODE>
+
+	<form action="http://localhost:9002/groups" method="get">
+	  <input type="hidden" name="name" value="">
+	  <input type="submit" value="Back To Groups">
+	</form>
+</html>

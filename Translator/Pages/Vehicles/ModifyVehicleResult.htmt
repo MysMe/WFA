@@ -1,0 +1,18 @@
+<html>
+	<HTMTCODE:200>
+		<H1>Vehicle updated!</H1>
+	</HTMTCODE>
+	<HTMTCODE:400>
+		<H1>Invalid request!</H1>
+	</HTMTCODE>
+	<HTMTCODE:403>
+		<H1>Invalid permissions!</H1>
+	</HTMTCODE>
+	<HTMTCODE:500>
+		<H1>Internal error!</H1>
+	</HTMTCODE>
+
+	<form action="http://localhost:9002/vehicles/me" method="get">
+		<input type="submit" value="Return To Vehicles">
+	</form>
+</html>

@@ -1,0 +1,34 @@
+<html>
+	<HTMTCODE:200>
+		<H1>Edit Service:</H1>
+		<form action="http://localhost:9002/services/authorised/close/result" method="post">
+			<input type="hidden" value="<HTMTVAL:service>" name="ID"><br>
+			Date Requested*:
+			<input type="text" value="<HTMTVAL:requested>" readonly><br>
+			Request*:
+			<input type="text" value="<HTMTVAL:request>" readonly><br>
+			Quoted Price*:
+			<input type="text" value="<HTMTVAL:quote>" readonly><br>
+			Labour Hours*:
+			<input type="number" value="<HTMTVAL:labour>" readonly><br>
+			Notes*:
+			<input type="text" value="<HTMTVAL:notes>" readonly><br>
+			Price Paid:
+			<input type="number" value="<HTMTVAL:quote>" name="paid" required><br>
+			*Uneditable fields provided for reference.
+			<input type="submit" value="Close">
+		</form>
+	</HTMTCODE>
+	<HTMTCODE:404>
+		<H1>No service found!</H1>
+	</HTMTCODE>
+	<HTMTCODE:400>
+		<H1>Invalid request!</H1>
+	</HTMTCODE>
+	<HTMTCODE:403>
+		<H1>Invalid permissions!</H1>
+	</HTMTCODE>
+	<HTMTCODE:500>
+		<H1>Internal error!</H1>
+	</HTMTCODE>
+</html>

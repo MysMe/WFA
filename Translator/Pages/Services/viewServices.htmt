@@ -1,0 +1,64 @@
+<html>
+	<HTMTCODE:200>
+		<H1>Unauthorised Services:</H1>
+		<table>
+			<tr>
+				<th>Date Requested</th><th>Request</th>
+			</tr>
+			<HTMT:Unauthorised>
+				<tr>
+					<td><HTMTVAL:requested></td><td><HTMTVAL:request></td>
+				</tr>				
+			</HTMT>
+		</table>
+		<H1>Authorised Services:</H1>
+		<table>
+			<tr>
+				<th>Date Requested</th><th>Request</th><th>Current Labour Hours</th><th>Notes</th><td>Review</td>
+			</tr>
+			<HTMT:Open>
+				<tr>
+					<td><HTMTVAL:requested></td><td><HTMTVAL:request></td><td><HTMTVAL:labour></td><td><HTMTVAL:notes></td>
+					<td>
+						<form action="http://localhost:9002/services/authorised/view" method="get">
+							<input type="hidden" value="<HTMTVAL:service>" name="ID">
+							<input type="submit" value="Review">
+						</form>
+					</td>
+				</tr>
+			</HTMT>
+		</table>
+		<H1>Completed Services:</H1>
+		<table>
+			<tr>
+				<th>Date Requested</th><th>Request</th><th>Total Labour Hours</th><th>Notes</th>
+				<th>Date Completed</th><th>Price Paid</th><th>Review</th>
+			</tr>
+			<HTMT:Closed>			
+				<tr>
+					<td><HTMTVAL:requested></td><td><HTMTVAL:request></td><td><HTMTVAL:labour></td>
+					<td><HTMTVAL:notes></td><td><HTMTVAL:completed></td><td><HTMTVAL:paid></td>	
+					
+					<td>
+						<form action="http://localhost:9002/services/closed/view" method="get">
+							<input type="hidden" value="<HTMTVAL:service>" name="ID">
+							<input type="submit" value="Review">
+						</form>
+					</td>
+				</tr>
+			</HTMT>
+		</table>
+	</HTMTCODE>
+	<HTMTCODE:404>
+		<H1>No services found!</H1>
+	</HTMTCODE>
+	<HTMTCODE:400>
+		<H1>Invalid request!</H1>
+	</HTMTCODE>
+	<HTMTCODE:403>
+		<H1>Invalid permissions!</H1>
+	</HTMTCODE>
+	<HTMTCODE:500>
+		<H1>Internal error!</H1>
+	</HTMTCODE>
+</html>

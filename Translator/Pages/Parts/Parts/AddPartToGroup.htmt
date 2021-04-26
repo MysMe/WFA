@@ -1,0 +1,14 @@
+<html>
+	<HTMTCODE:200>
+		<HTMT:>
+			<form action="http://localhost:9002/parts/group/result" method="post">
+				<label for="PID">Part ID:</label>
+				<input type="text" name="ID" value="<HTMTVAL:ID>" readonly><br><br>
+				
+				<label for="GID">Group ID:</label>
+				<input type="text" name="group" required><br><br>
+				<input type="submit" value="Submit">
+			</form>
+		</HTMT>
+	</HTMTCODE>
+</html>

@@ -1,0 +1,23 @@
+<html>
+	<HTMTCODE:200>
+		<HTMT:>
+			<form action="http://localhost:9002/parts/create/result" method="post">
+				<label for="supname">Supplier Name:</label>
+				<input type="text" value="<HTMTVAL:Name>" readonly><br><br>
+				
+				<input type="hidden" name="supplier" value="<HTMTVAL:ID>" readonly>
+				
+				<label for="password">Part Name:</label>
+				<input type="text" name="name" required><br><br>
+				
+				<label for="password">Opening Quantity:</label>
+				<input type="text" name="quantity" required><br><br>
+				
+				<label for="password">Part Price:</label>
+				<input type="text" name="price" required><br><br>
+				
+				<input type="submit" value="Submit">
+			</form>
+		</HTMT>
+	</HTMTCODE>
+</html>

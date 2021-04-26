@@ -4,6 +4,39 @@
 #include "WebRoutes/Parts.h"
 #include "WebRoutes/Vehicle.h"
 #include "WebRoutes/Services.h"
+#include "curl/curl.h"
+
+std::unordered_map<std::string, std::string> parseURLValues(std::string_view source)
+{
+    std::unordered_map<std::string, std::string> ret;
+    auto it = source.cbegin();
+    while (it != source.cend())
+    {
+        //We implicitly allow this to not find anything, indicating it is the last element
+        auto end = std::find(it, source.cend(), '&');
+
+        auto div = std::find(it, end, '=');
+
+        std::string id{ &*it, static_cast<size_t>(std::distance(it, div)) };
+        //Empty values are allowed, but empty names are not
+        if (div != end && std::distance(div, end) - 1 != 0)
+        {
+            std::string temp{ div + 1, end };
+            std::replace(temp.begin(), temp.end(), '+', ' '); //Spaces are encoded as '+' in queries (but not URLs, because consistency)
+            int curl_str_len = 0;
+            auto curl_str = curl_easy_unescape(nullptr, temp.data(), temp.size(), &curl_str_len);
+            ret[id].assign(curl_str, curl_str_len);
+            curl_free(curl_str);
+        }
+        else
+            ret[id] = "";
+
+        it = end;
+        if (it != source.cend())
+            ++it;
+    }
+    return ret;
+}
 
 void net()
 {
@@ -11,6 +44,7 @@ void net()
     app.listen(9001, [&](auto*){});
 
     app.post("/request", HttpCallWrapper(webRoute::authenticate));
+    app.post("/register", HttpCallWrapper(webRoute::registerUser));
     app.get("/release", webRoute::deauthenticate);
     app.get("/checkSession", webRoute::checkSession);
 
@@ -28,14 +62,102 @@ void net()
 
     app.post("/part/group/create", HttpCallWrapper(webRoute::createPartGroup));
     app.post("/part/group/update", HttpCallWrapper(webRoute::updatePartGroup));
+    app.get("/part/group/search", HttpCallWrapper(webRoute::searchPartGroups));
+    app.get("/part/group/select", HttpCallWrapper(webRoute::selectPartGroup));
+
     app.post("/part/create", HttpCallWrapper(webRoute::createPart));
     app.post("/part/update", HttpCallWrapper(webRoute::updatePart));
     app.get("/part/search", HttpCallWrapper(webRoute::searchParts));
+    app.get("/part/select", HttpCallWrapper(webRoute::selectPart));
 
 
     app.post("/vehicle/create", HttpCallWrapper(webRoute::createVehicle));
     app.post("/vehicle/update", HttpCallWrapper(webRoute::updateVehicle));
     app.post("/vehicle/delete", HttpCallWrapper(webRoute::deleteVehicle));
+    app.get("/vehicle/select", HttpCallWrapper(webRoute::selectVehicle));
+    //Search vehicles by owner - Done by select user
+
+    app.post("/service/create", HttpCallWrapper(webRoute::createRequest));
+    app.post("/service/authorise", HttpCallWrapper(webRoute::authoriseRequest));
+    app.post("/service/update", HttpCallWrapper(webRoute::updateService));
+    app.post("/service/close", HttpCallWrapper(webRoute::closeService));
+    app.post("/service/part/add", HttpCallWrapper(webRoute::addPartToService));
+    app.post("/service/part/remove", HttpCallWrapper(webRoute::removePartFromService));
+    app.get("/service/part/select", HttpCallWrapper(webRoute::selectServicePart));
+    app.get("/service/search", HttpCallWrapper(webRoute::searchServices));
+    app.get("/service/select", HttpCallWrapper(webRoute::selectService));
+
+    app.get("/debug/displayTables", [](auto* res, auto* req)
+        {
+            std::cout << "Displaying tables:\n";
+            const auto [tableCode, tables] = serverData::database->query(std::string_view("SELECT name FROM sqlite_schema WHERE type='table' ORDER BY name"), {});
+            if (!tableCode)
+            {
+                std::cout << "Error accessing database metadata.\n";
+            }
+            else
+            {
+                for (size_t x = 0; x < tables.rowCount(); x++)
+                {
+                    std::cout << tables[x][0] << ":";
+                    const auto [code, result] = serverData::database->query("SELECT * FROM " + std::string(tables[x][0]), {});
+                    if (!code)
+                    {
+                        std::cout << "Error displaying table rows.\n";
+                    }
+                    else
+                    {
+                        if (result.columnCount() == 0 || result.rowCount() == 0)
+                        {
+                            std::cout << " empty.\n";
+                            continue;
+                        }
+                        std::cout << "\n";
+
+                        std::vector<size_t> sizes(result.columnCount(), 0);
+                        for (size_t r = 0; r < result.rowCount(); r++)
+                        {
+                            for (size_t c = 0; c < result.columnCount(); c++)
+                            {
+                                if (result[r][c].size() > sizes[c])
+                                    sizes[c] = result[r][c].size();
+                            }
+                        }
+
+                        std::cout << '|';
+                        for (size_t c = 0; c < result.columnCount(); c++)
+                        {
+                            if (result.getColName(c).size() > sizes[c])
+                                sizes[c] = result.getColName(c).size();
+
+                            std::cout << result.getColName(c);
+                            for (size_t i = result.getColName(c).size(); i < sizes[c]; i++)
+                            {
+                                std::cout << ' ';
+                            }
+                            std::cout << '|';
+                        }
+                        std::cout << "\n";
+
+                        for (size_t row = 0; row < result.rowCount(); row++)
+                        {
+                            std::cout << '|';
+                            for (size_t col = 0; col < result.columnCount(); col++)
+                            {
+                                std::cout << result[row][col];
+                                for (size_t i = result[row][col].size(); i < sizes[col]; i++)
+                                {
+                                    std::cout << ' ';
+                                }
+                                std::cout << '|';
+                            }
+                            std::cout << "\n";
+                        }
+                    }
+                }
+            }
+            res->end();
+        });
 
     app.any("/ping", [](auto* res, auto* req) 
         { 

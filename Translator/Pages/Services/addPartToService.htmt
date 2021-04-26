@@ -1,0 +1,25 @@
+<html>
+	<HTMTCODE:200>
+		<H1>Edit Service:</H1>
+		<form action="http://localhost:9002/services/authorised/part/add/result" method="post">
+			<input type="hidden" value="<HTMTVAL:service>" name="serviceID"><br>
+			Part ID:
+			<input type="text" name="partID" required><br>
+			Quantity:
+			<input type="number" value="1" name="quantity" required><br>
+			<input type="submit" value="Add">
+		</form>
+	</HTMTCODE>
+	<HTMTCODE:404>
+		<H1>No service found!</H1>
+	</HTMTCODE>
+	<HTMTCODE:400>
+		<H1>Invalid request!</H1>
+	</HTMTCODE>
+	<HTMTCODE:403>
+		<H1>Invalid permissions!</H1>
+	</HTMTCODE>
+	<HTMTCODE:500>
+		<H1>Internal error!</H1>
+	</HTMTCODE>
+</html>

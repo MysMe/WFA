@@ -4,15 +4,10 @@
 
 namespace webRoute
 {
-	//Create
-	//Read (local)
-	//Search
-	//Delete
-	//Update
-
     void createUser(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body& b, const query& q)
     {
-        if (!b.containsAll({ "username", "password", "permission" }))
+        if (!b.containsAll({ "username", "password", "permission" }) || 
+            b.getElement("username").empty() || b.getElement("password").empty() || b.getElement("permission").empty())
         {
             //Bad Request - Invalid arguments
             res->writeStatus(HTTPCodes::BADREQUEST);
@@ -70,7 +65,7 @@ namespace webRoute
             return;
         }
 
-        const auto [userStatus, userResult] = serverData::database->query("SELECT USERNAME, PERMISSIONS FROM " + serverData::tableNames[serverData::USER] + " WHERE ID = :USR",
+        const auto [userStatus, userResult] = serverData::database->query("SELECT ID, USERNAME, PERMISSIONS FROM " + serverData::tableNames[serverData::USER] + " WHERE ID = :USR",
             { {":USR", std::to_string(user.value())} });
         if (!userStatus)
         {          
@@ -82,7 +77,8 @@ namespace webRoute
 
         const auto [vehStatus, vehResult] = 
             serverData::database->query(
-"SELECT VS.MAKE, VS.MODEL, V.YEAR, V.COLOUR FROM VEHICLES AS V INNER JOIN VEHICLESHAREDDATA AS VS ON V.BASE = VS.ID WHERE V.OWNER = :USR;", { {":USR", std::to_string(user.value())} });
+                "SELECT V.ID, V.PLATE, VS.MAKE, VS.MODEL, V.YEAR, V.COLOUR FROM " + serverData::tableNames[serverData::VEHICLES] + " AS V INNER JOIN " +
+                 serverData::tableNames[serverData::VEHICLESHARED] + " AS VS ON V.BASE = VS.ID WHERE V.OWNER = :USR;", { {":USR", std::to_string(user.value())} });
 
         if (!vehStatus)
         {
@@ -93,26 +89,29 @@ namespace webRoute
         }
 
         responseWrapper response;
-        response.add("Username", userResult[0][0]);
-        response.add("Permissions", userResult[0][1]);
+        response.add("ID", userResult[0][0]);
+        response.add("Username", userResult[0][1]);
+        response.add("Permissions", userResult[0][2]);
         for (size_t i = 0; i < vehResult.rowCount(); i++)
         {
             responseWrapper temp;
-            temp.add("Vehicle Make", vehResult[i][0]);
-            temp.add("Vehicle Model", vehResult[i][1]);
-            temp.add("Vehicle Year", vehResult[i][2]);
-            temp.add("Vehicle Colour", vehResult[i][3]);
+            temp.add("ID", vehResult[i][0]);
+            temp.add("Plate", vehResult[i][1]);
+            temp.add("Make", vehResult[i][2]);
+            temp.add("Model", vehResult[i][3]);
+            temp.add("Year", vehResult[i][4]);
+            temp.add("Colour", vehResult[i][5]);
             response.add("Vehicles", std::move(temp), true);
         }
 
-        std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") accessed user data for (\"" << userResult[0][0] << "\").\n";
+        std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") accessed user data for (\"" << userResult[0][1] << "\").\n";
 
         res->tryEnd(response.toData(false));
     }
 
     void searchUsers(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body& b, const query& q)
     {
-        if (!q.hasElement("username"))
+        if (!q.hasElement("username", true))
         {
             //Bad Request - Invalid arguments
             res->writeStatus(HTTPCodes::BADREQUEST);
@@ -130,7 +129,7 @@ namespace webRoute
 
         std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") searched for user (\"" << q.getElement("username") << "\").\n";
 
-        const auto [status, result] = serverData::database->query("SELECT ID, USERNAME, PERMISSIONS FROM " + serverData::tableNames[serverData::USER] + " WHERE USERNAME LIKE :USR", 
+        const auto [status, result] = serverData::database->query("SELECT ID, USERNAME, PERMISSIONS FROM " + serverData::tableNames[serverData::USER] + " WHERE USERNAME LIKE :USR ORDER BY USERNAME", 
             { {":USR", generateLIKEArgument(q.getElement("username"))} });
         if (!status)
         {
@@ -169,7 +168,7 @@ namespace webRoute
                     vehicleResponse.add("Vehicle Model", vehResult[u][2]);
                     vehicleResponse.add("Vehicle Year", vehResult[u][3]);
                     vehicleResponse.add("Vehicle Colour", vehResult[u][4]);
-                    temp.add("Vehicles", std::move(temp), true);
+                    temp.add("Vehicles", std::move(vehicleResponse), true);
                 }
                 response.add("Users", std::move(temp));
             }
@@ -219,7 +218,7 @@ namespace webRoute
 
             const auto [vehStatus, vehResult] =
                 serverData::database->query(
-                    "SELECT V.PLATE, VS.MAKE, VS.MODEL, V.YEAR, V.COLOUR FROM VEHICLES AS V INNER JOIN VEHICLESHAREDDATA AS VS ON V.BASE = VS.ID WHERE V.OWNER = :USR;", { {":USR", result[0][0]} });
+                    "SELECT V.ID, V.PLATE, VS.MAKE, VS.MODEL, V.YEAR, V.COLOUR FROM VEHICLES AS V INNER JOIN VEHICLESHAREDDATA AS VS ON V.BASE = VS.ID WHERE V.OWNER = :USR;", { {":USR", result[0][0]} });
 
             if (!vehStatus)
             {
@@ -236,11 +235,12 @@ namespace webRoute
             for (size_t i = 0; i < vehResult.rowCount(); i++)
             {
                 responseWrapper temp;
-                temp.add("Vehicle plate", vehResult[i][0]);
-                temp.add("Vehicle Make", vehResult[i][1]);
-                temp.add("Vehicle Model", vehResult[i][2]);
-                temp.add("Vehicle Year", vehResult[i][3]);
-                temp.add("Vehicle Colour", vehResult[i][4]);
+                temp.add("ID", vehResult[i][0]);
+                temp.add("Plate", vehResult[i][1]);
+                temp.add("Make", vehResult[i][2]);
+                temp.add("Model", vehResult[i][3]);
+                temp.add("Year", vehResult[i][4]);
+                temp.add("Colour", vehResult[i][5]);
                 response.add("Vehicles", std::move(temp), true);
             }
             res->tryEnd(response.toData(false));

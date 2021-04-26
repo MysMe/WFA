@@ -1,0 +1,29 @@
+<html>
+	<HTMTCODE:200>
+		<HTMT:>
+			<form action="http://localhost:9002/vehicles/create/result" method="post">
+				<input 
+				<HTMTCOND:Permissions!3>type="hidden"</HTMTCOND>
+				<HTMTCOND:Permissions=3>type="number"</HTMTCOND>
+					value="<HTMTVAL:ID>" name="owner">
+				
+				<label for="plate">Number plate:</label>
+				<input type="text" name="plate" required><br><br>
+				
+				<label for="make">Make:</label>
+				<input type="text" name="make" required><br><br>
+				
+				<label for="model">Model:</label>
+				<input type="text" name="model" required><br><br>
+				
+				<label for="year">Year:</label>
+				<input type="text" name="year" required><br><br>
+				
+				<label for="colour">Colour:</label>
+				<input type="text" name="colour" required><br><br>
+				
+				<input type="submit" value="Submit">
+			</form>
+		</HTMT>
+	</HTMTCODE>
+</html>

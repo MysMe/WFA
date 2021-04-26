@@ -1,0 +1,61 @@
+<html>
+	<HTMTCODE:200>
+
+	<form action="http://localhost:9002/groups" method="get">
+	  <label for="details">Search:</label>
+	  <input type="text" name="name">
+	  <input type="submit" value="Search">
+	</form>
+
+	<form action="http://localhost:9002/groups/create" method="post">
+		<input type="text" name="name">
+		<input type="submit" value="Create" > </form>
+
+		<H1>Groups:</H1>
+		<table>
+			<tr>
+				<th>Name</th><th>ID</th><th>Modify</th><th>Add Part</th></tr>
+			<HTMT:Groups>
+				<tr>
+					<td><HTMTVAL:Name></td><td><HTMTVAL:ID></td>
+					<td>
+						<form action="http://localhost:9002/groups/modify" method="get">
+							<input type="hidden" value="<HTMTVAL:ID>" name="ID">
+							<input type="submit" value="Modify">
+						</form>
+					</td>
+						
+					<td>
+						<form action="http://localhost:9002/groups/part" method="get">
+							<input type="hidden" value="<HTMTVAL:ID>" name="ID">
+							<input type="submit" value="Add Part">
+						</form>
+					</td>
+				</tr>
+			</HTMT>
+		</table>
+	</HTMTCODE>
+	<HTMTCODE:404>
+		<form action="http://localhost:9002/groups" method="get">
+		  <label for="details">Search:</label>
+		  <input type="text" name="name">
+		  <input type="submit" value="Search">
+		</form>
+
+		<form action="http://localhost:9002/groups/create" method="post">
+			<input type="text" name="name">
+			<input type="submit" value="Create"> 
+		</form>
+
+		<H1>No groups found!</H1>
+	</HTMTCODE>
+	<HTMTCODE:400>
+		<H1>Invalid request!</H1>
+	</HTMTCODE>
+	<HTMTCODE:403>
+		<H1>Invalid permissions!</H1>
+	</HTMTCODE>
+	<HTMTCODE:500>
+		<H1>Internal error!</H1>
+	</HTMTCODE>
+</html>

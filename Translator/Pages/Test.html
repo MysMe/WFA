@@ -1,0 +1,28 @@
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<div class="headerBar"></div>
+<form action="http://localhost:9002/home" method="post">
+  <input class="button home" type="image" src="Resources/Logo_White.png">
+  <input class="button home_B" type="image" src="Resources/Home.png">
+</form>
+<form action="http://localhost:9002/home" method="get">
+  <input class="button back" type="image" src="Resources/Back.png">
+  <input class="button backDesc" type="submit" value="Back to Home Page">
+</form>
+<form action="http://localhost:9002/logout" method="get">
+  <input class="button logout" type="image" src="Resources/Logout.png">
+</form>
+
+<form action="http://localhost:9002/register" method="post">
+  <label for="username">Username:</label>
+  <input type="text" name="username" required><br><br>
+  <label for="password">Password:</label>
+  <input type="password" name="password" required><br><br>
+  <input type="submit" value="Submit">
+</form>
+</body>
+</html>

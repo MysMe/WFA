@@ -1,17 +1,17 @@
 <html>
-<HTMTCODE:200>
-	<HTMT:>
-		<form action="http://localhost:9002/suppliers/create/result" method="post">
-			<label for="username">Name:</label>
-			<input type="text" name="name"><br><br>
-			
-			<label for="password">Phone:</label>
-			<input type="text" name="phone"><br><br>
-			
-			<label for="permissions">Email:</label>
-			<input type="text" name="email"><br><br>
-			<input type="submit" value="Submit">
-		</form>
-	</HTMT>
-</HTMTCODE>
+	<HTMTCODE:200>
+		<HTMT:>
+			<form action="http://localhost:9002/suppliers/create/result" method="post">
+				<label for="username">Name:</label>
+				<input type="text" name="name" required><br><br>
+				
+				<label for="password">Phone:</label>
+				<input type="text" name="phone"><br><br>
+				
+				<label for="permissions">Email:</label>
+				<input type="text" name="email"><br><br>
+				<input type="submit" value="Submit">
+			</form>
+		</HTMT>
+	</HTMTCODE>
 </html>

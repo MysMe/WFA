@@ -1,0 +1,16 @@
+<html>
+	<HTMTCODE:200>
+		<HTMT:>
+			<form action="http://localhost:9002/services/authorise/result" method="post">
+				<input type="hidden" value="<HTMTVAL:service>" name="ID">
+				
+				<label for="request">Request:</label>
+				<input type="text" name="request" value="<HTMTVAL:request>" readonly><br><br>
+				
+				<label for="quote">Quote:</label>
+				<input type="number" name="quote" required><br><br>
+				<input type="submit" value="Submit">
+			</form>
+		</HTMT>
+	</HTMTCODE>
+</html>

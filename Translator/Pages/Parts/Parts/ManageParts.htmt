@@ -1,0 +1,80 @@
+<html>
+	<HTMTCODE:200>
+		<form action="http://localhost:9002/parts" method="get">
+		  <label for="details">Search:</label>
+		  <input type="text" name="name"><br><br>
+		  <input type="submit" value="Search">
+		</form>
+
+		<form action="http://localhost:9002/suppliers" method="get">
+		  <label for="details">Go To Suppliers:</label>
+		  <input type="hidden" name="searchterm">
+		  <input type="submit" value="Go">
+		</form>
+
+		<form action="http://localhost:9002/groups" method="get">
+		  <label for="details">Go To Groups:</label>
+		  <input type="hidden" name="name">
+		  <input type="submit" value="Go">
+		</form>
+
+		<H1>Parts:</H1>
+		<table>
+			<tr>
+			<th>Name</th><th>ID</th><th>Price</th><th>Quantity</th><th>Supplier</th><th>Similar</th><th>Group Control</th></tr>
+			<HTMT:Parts>
+				<tr>
+					<td><HTMTVAL:Name></td><td><HTMTVAL:ID></td><td><HTMTVAL:Price></td><td><HTMTVAL:Quantity></td><td><HTMTVAL:Supplier></td>
+					<HTMTCOND:GroupID!NULL>
+						<td>
+							<form action="http://localhost:9002/parts" method="get">
+								<input type="hidden" name="group" value="<HTMTVAL:GroupID>">
+								<input type="submit" value="Similar">
+							</form>
+						</td>
+						<td>
+							<form action="http://localhost:9002/parts/group/result" method="post">
+								<input type="hidden" value="<HTMTVAL:ID>" name="ID">
+								<input type="hidden" value="NULL" name="group">
+								<input type="submit" value="Remove From Group">
+							</form>
+						</td>
+								
+					</HTMTCOND>
+					<HTMTCOND:GroupID=NULL>
+						<td>No Group.</td>
+						<td>
+							<form action="http://localhost:9002/parts/group" method="get">
+								<input type="hidden" value="<HTMTVAL:ID>" name="ID">
+								<input type="submit" value="Add To Group">
+							</form>
+						</td>
+					</HTMTCOND>
+				</tr>				
+			</HTMT>
+		</table>
+	</HTMTCODE>
+	<HTMTCODE:404>
+		<form action="http://localhost:9002/parts" method="get">
+		  <label for="details">Search:</label>
+		  <input type="text" name="name"><br><br>
+		  <input type="submit" value="Search">
+		</form>
+
+		<form action="http://localhost:9002/suppliers" method="get">
+		  <label for="details">Go To Suppliers:</label>
+		  <input type="hidden" name="searchterm">
+		  <input type="submit" value="Go">
+		</form>
+		<H1>No parts found!</H1>
+	</HTMTCODE>
+	<HTMTCODE:400>
+		<H1>Invalid request!</H1>
+	</HTMTCODE>
+	<HTMTCODE:403>
+		<H1>Invalid permissions!</H1>
+	</HTMTCODE>
+	<HTMTCODE:500>
+		<H1>Internal error!</H1>
+	</HTMTCODE>
+</html>

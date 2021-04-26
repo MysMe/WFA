@@ -1,0 +1,61 @@
+<html>
+	<HTMTCODE:200>
+		<H1>Authorised Services:</H1>
+		<table>
+			<tr>
+				<th>Date Requested</th><th>Request</th><th>Labour Hours</th>
+				<th>Quoted Price</th><th>Notes</th><th>Parts</th><th>Edit</th><th>Close</th>
+			</tr>
+			<HTMT:Open>
+				<tr>
+					<td><HTMTVAL:requested></td><td><HTMTVAL:request></td><td><HTMTVAL:labour></td>
+					<td><HTMTVAL:quote></td><td><HTMTVAL:notes></td>
+				
+					<td>
+						<table>
+							<tr>
+								<td>Name</td><td>Quantity</td><td>Per-Unit Price</td><td>Remove</td>
+							</tr>
+							<HTMT:parts>
+								<tr>
+									<td><HTMTVAL:name></td><td><HTMTVAL:quantity></td><td><HTMTVAL:price></td>
+					
+									<td><form action="http://localhost:9002/services/authorised/part/remove" method="get">
+											<input type="hidden" value="<HTMTVAL:entry>" name="entry">
+											<input type="submit" value="Remove">
+										</form>
+									</td>
+								</tr>
+							</HTMT>
+						</table>
+					</td>
+				
+					<td>
+						<form action="http://localhost:9002/services/authorised/edit" method="get">
+							<input type="hidden" value="<HTMTVAL:service>" name="ID">
+							<input type="submit" value="Edit">
+						</form>
+					</td>
+					<td>
+						<form action="http://localhost:9002/services/authorised/close" method="get">
+							<input type="hidden" value="<HTMTVAL:service>" name="ID">
+							<input type="submit" value="Close">
+						</form>
+					</td>
+				</tr>	
+			</HTMT>
+		</table>
+	</HTMTCODE>
+	<HTMTCODE:404>
+		<H1>No services found!</H1>
+	</HTMTCODE>
+	<HTMTCODE:400>
+		<H1>Invalid request!</H1>
+	</HTMTCODE>
+	<HTMTCODE:403>
+		<H1>Invalid permissions!</H1>
+	</HTMTCODE>
+	<HTMTCODE:500>
+		<H1>Internal error!</H1>
+	</HTMTCODE>
+</html>

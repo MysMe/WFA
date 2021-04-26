@@ -1,0 +1,31 @@
+<html>
+	<HTMTCODE:200>
+		<HTMT:>
+			<form action="http://localhost:9002/vehicles/modify/result" method="post">
+				<input type="hidden" value="<HTMTVAL:ID>" name="ID" readonly>
+				
+				<label for="plate">Number plate:</label>
+				<input type="text" name="plate" value="<HTMTVAL:Plate>" required><br><br>
+				
+				<label for="make">Make:</label>
+				<input type="text" name="make" value="<HTMTVAL:Make>" readonly><br><br>
+				
+				<label for="model">Model:</label>
+				<input type="text" name="model" value="<HTMTVAL:Model>" readonly><br><br>
+				
+				<label for="year">Year:</label>
+				<input type="text" name="year" value="<HTMTVAL:Year>" readonly><br><br>
+				
+				<label for="colour">Colour:</label>
+				<input type="text" name="colour" value="<HTMTVAL:Colour>" required><br><br>
+				
+				<input type="submit" value="Submit">
+			</form>
+			
+			<form action="http://localhost:9002/vehicles/remove/result" method="post">
+				<input type="hidden" value="<HTMTVAL:ID>" name="ID" readonly>
+				<input type="submit" value="Remove Vehicle">
+			</form>
+		</HTMT>
+	</HTMTCODE>
+</html>

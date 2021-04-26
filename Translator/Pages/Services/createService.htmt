@@ -1,0 +1,13 @@
+<html>
+	<HTMTCODE:200>
+		<HTMT:>
+			<form action="http://localhost:9002/services/create/result" method="post">
+				<input type="hidden" value="<HTMTVAL:ID>" name="VID">
+				
+				<label for="plate">Request:</label>
+				<input type="text" name="request" required><br><br>
+				<input type="submit" value="Submit">
+			</form>
+		</HTMT>
+	</HTMTCODE>
+</html>

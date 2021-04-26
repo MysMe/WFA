@@ -746,7 +746,7 @@ bool linkPages(uWS::SSLApp& app, const std::string& linkFile)
             const std::string target = 
             secDiv == line.cend() ? webDirectory : std::string{ secDiv + 1, line.cend() };
 
-            std::cout << "Linked page \"" + webDirectory + "\" to local page \"" + fileDirectory + "\", which forwards to \"" + target + "\".\n";
+            std::cout << "Linked page \"" + webDirectory + "\" to local page \"" + fileDirectory + "\" which forwards to \"" + target + "\".\n";
 
             if (line[0] == 'P')
             {

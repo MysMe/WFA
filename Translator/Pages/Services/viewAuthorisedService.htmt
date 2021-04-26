@@ -1,0 +1,37 @@
+<html>
+	<HTMTCODE:200>
+	<table>
+			<tr>
+				<th>Date Requested</th><th>Request</th><th>Labour Hours</th><th>Quoted Price</th><th>Notes</th>
+			</tr>
+			<tr>
+				<td><HTMTVAL:requested></td><td><HTMTVAL:request></td><td><HTMTVAL:labour></td><td><HTMTVAL:quote></td><td><HTMTVAL:notes></td>
+			</tr>
+		</table>
+				
+		Parts:
+		<table>
+			<tr>
+				<td>Name</td><td>Quantity</td><td>Per-Unit Price</td>
+			</tr>
+			<HTMT:parts>
+				<tr>
+					<td><HTMTVAL:name></td><td><HTMTVAL:quantity></td><td><HTMTVAL:price></td>
+				</tr>
+			</HTMT>
+		</table>
+	</table>
+	</HTMTCODE>
+	<HTMTCODE:404>
+		<H1>No service found!</H1>
+	</HTMTCODE>
+	<HTMTCODE:400>
+		<H1>Invalid request!</H1>
+	</HTMTCODE>
+	<HTMTCODE:403>
+		<H1>Invalid permissions!</H1>
+	</HTMTCODE>
+	<HTMTCODE:500>
+		<H1>Internal error!</H1>
+	</HTMTCODE>
+</html>

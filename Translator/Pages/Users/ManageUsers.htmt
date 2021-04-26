@@ -1,53 +1,59 @@
 <html>
-<HTMTCODE:200>
+	<HTMTCODE:200>
+		<form action="http://localhost:9002/users" method="get">
+		  <label for="username">Username:</label>
+		  <input type="text" name="username"><br><br>
+		  <input type="submit" value="Search">
+		</form>
 
-<form action="http://localhost:9002/users" method="get">
-  <label for="username">Username:</label>
-  <input type="text" name="username"><br><br>
-  <input type="submit" value="Search">
-</form>
+		<form action="http://localhost:9002/users/create" method="get">
+			<input type="submit" value="Create">
+		</form>
 
-				<form action="http://localhost:9002/users/create" method="get">
-					<input type="submit" value="Create" 
-					name="Submit"> </form>
+		<H1>Users:</H1>
+		<table>
+			<tr>
+				<th>Username</th><th>Permissions</th><th>Modify</th><th>Delete</th>
+			</tr>
+			<HTMT:Users>
+				<tr>
+					<td><HTMTVAL:Username></td><td><HTMTVAL:Permissions></td>
+					<td>
+						<form action="http://localhost:9002/users/modify" method="get">
+							<input type="hidden" value="<HTMTVAL:ID>" name="ID">
+							<input type="submit" value="Modify">
+						</form>
+					</td>
+					<td>
+						<form action="http://localhost:9002/users/delete" method="post">
+							<input type="hidden" value="<HTMTVAL:ID>" name="ID">
+							<input type="submit" value="Delete">
+						</form>
+					</td>
+				</tr>
+			</HTMT>
+		</table>
+	</HTMTCODE>
+	<HTMTCODE:404>
+		<form action="http://localhost:9002/users" method="get">
+		  <label for="username">Username:</label>
+		  <input type="text" name="username"><br><br>
+		  <input type="submit" value="Search">
+		</form>
 
-	<H1>Users:</H1>
-	<table>
-		<tr><th>Username</th><th>Permissions</th><th>Modify</th><th>Delete</th></tr>
-		<HTMT:Users>
-			<tr><td><HTMTVAL:Username></td><td><HTMTVAL:Permissions></td>
-				<td><form action="http://localhost:9002/users/modify" method="get">
-					<input type="hidden" value="<HTMTVAL:ID>" name="ID">
-					<input type="submit" value="Modify" 
-					name="Submit"></form></td>
-				<td><form action="http://localhost:9002/users/delete" method="post">
-					<input type="hidden" value="<HTMTVAL:ID>" name="ID">
-					<input type="submit" value="Delete" 
-					name="Submit"></form></td></tr>
-		</HTMT>
-	</table>
-</HTMTCODE>
-<HTMTCODE:404>
+		<form action="http://localhost:9002/users/create" method="get">
+			<input type="submit" value="Create">
+		</form>
 
-<form action="http://localhost:9002/users" method="get">
-  <label for="username">Username:</label>
-  <input type="text" name="username"><br><br>
-  <input type="submit" value="Search">
-</form>
-
-				<form action="http://localhost:9002/users/create" method="get">
-					<input type="submit" value="Create" 
-					name="Submit"></form>
-
-	<H1>No users found!</H1>
-</HTMTCODE>
-<HTMTCODE:400>
-	<H1>Invalid request!</H1>
-</HTMTCODE>
-<HTMTCODE:403>
-	<H1>Invalid permissions!</H1>
-</HTMTCODE>
-<HTMTCODE:500>
-	<H1>Internal error!</H1>
-</HTMTCODE>
+		<H1>No users found!</H1>
+	</HTMTCODE>
+	<HTMTCODE:400>
+		<H1>Invalid request!</H1>
+	</HTMTCODE>
+	<HTMTCODE:403>
+		<H1>Invalid permissions!</H1>
+	</HTMTCODE>
+	<HTMTCODE:500>
+		<H1>Internal error!</H1>
+	</HTMTCODE>
 </html>

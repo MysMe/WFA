@@ -1,0 +1,51 @@
+.headerBar
+{
+	background-color: red;
+	width: 100%;
+	height: 50px;
+	padding: 0%;
+	margin: 0px;
+	margin-left: 0px;
+	position: fixed;
+	top: 0;
+	left: 0;
+}
+
+.button
+{
+	height: 50px;
+	position: fixed;
+	top: 0;
+}
+
+.home
+{
+	left: 0;
+}
+.home_B
+{
+	left: 137.5; /* Width of logo after scaling. */
+}
+.back
+{
+	left: 210; /* Approximate scaled width of home button + logo. */
+}
+.backDesc
+{
+	font-size: 30px;
+	color: white;
+	line-height: 50px;
+	left: 260; /* Approximate scaled width of home button + logo + back button. */
+	background-color: transparent;
+	border: 0;
+}
+.logout
+{
+	right: 0;
+}
+
+html, body{
+margin:0;
+margin-top: 50px;
+padding:0;
+}
