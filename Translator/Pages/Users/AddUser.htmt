@@ -14,4 +14,8 @@
 			</form>
 		</HTMT>
 	</HTMTCODE>
+	<form action="http://localhost:9002/users" method="get">
+		<input type="hidden" value="" name="username">
+		<input type="submit" value="Cancel">
+	</form>
 </html>

@@ -1,21 +1,21 @@
 <html>
 	<HTMTCODE:200>
-		<H1>Edit Service:</H1>
-		<form action="http://localhost:9002/services/authorised/close/result" method="post">
+		<H1>Close Service:</H1>
+		<form style="display: inline" action="http://localhost:9002/services/authorised/close/result" method="post">
 			<input type="hidden" value="<HTMTVAL:service>" name="ID"><br>
-			Date Requested*:
-			<input type="text" value="<HTMTVAL:requested>" readonly><br>
-			Request*:
-			<input type="text" value="<HTMTVAL:request>" readonly><br>
-			Quoted Price*:
-			<input type="text" value="<HTMTVAL:quote>" readonly><br>
-			Labour Hours*:
-			<input type="number" value="<HTMTVAL:labour>" readonly><br>
-			Notes*:
-			<input type="text" value="<HTMTVAL:notes>" readonly><br>
+			<label style="background-color:red">Date Requested:</label>
+			<input style="background-color:red" type="text" value="<HTMTVAL:requested>" readonly><br>
+			<label style="background-color:red">Request:</label>
+			<input style="background-color:red" type="text" value="<HTMTVAL:request>" readonly><br>
+			<label style="background-color:red">Quoted Price:</label>
+			<input style="background-color:red" type="text" value="<HTMTVAL:quote>" readonly><br>
+			<label style="background-color:red">Labour Hours:</label>
+			<input style="background-color:red" type="number" value="<HTMTVAL:labour>" readonly><br>
+			<label style="background-color:red">Notes:</label>
+			<input style="background-color:red" type="text" value="<HTMTVAL:notes>" readonly><br>
 			Price Paid:
 			<input type="number" value="<HTMTVAL:quote>" name="paid" required><br>
-			*Uneditable fields provided for reference.
+			<label style="background-color:red">Uneditable fields provided for reference.</label><br>
 			<input type="submit" value="Close">
 		</form>
 	</HTMTCODE>
@@ -31,4 +31,8 @@
 	<HTMTCODE:500>
 		<H1>Internal error!</H1>
 	</HTMTCODE>
+	<form style="display: inline" action="http://localhost:9002/services/authorised" method="get">
+		<input type="hidden" value="" name="open">
+		<input type="submit" value="Cancel">
+	</form>
 </html>

@@ -1,7 +1,7 @@
 <html>
 	<HTMTCODE:200>
 		<HTMT:>
-			<form action="http://localhost:9002/services/create/result" method="post">
+			<form style="display: inline" action="http://localhost:9002/services/create/result" method="post">
 				<input type="hidden" value="<HTMTVAL:ID>" name="VID">
 				
 				<label for="plate">Request:</label>
@@ -10,4 +10,7 @@
 			</form>
 		</HTMT>
 	</HTMTCODE>
+	<form style="display: inline" action="http://localhost:9002/vehicles/me" method="get">
+		<input type="submit" value="Cancel">
+	</form>
 </html>

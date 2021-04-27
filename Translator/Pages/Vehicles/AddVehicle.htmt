@@ -1,11 +1,13 @@
 <html>
 	<HTMTCODE:200>
 		<HTMT:>
-			<form action="http://localhost:9002/vehicles/create/result" method="post">
+			<form style="display: inline" action="http://localhost:9002/vehicles/create/result" method="post">
+				<HTMTCOND:Permissions=3><label for="user">User ID:</label></HTMTCOND>
 				<input 
 				<HTMTCOND:Permissions!3>type="hidden"</HTMTCOND>
 				<HTMTCOND:Permissions=3>type="number"</HTMTCOND>
 					value="<HTMTVAL:ID>" name="owner">
+				<HTMTCOND:Permissions=3><br><br></HTMTCOND>
 				
 				<label for="plate">Number plate:</label>
 				<input type="text" name="plate" required><br><br>
@@ -26,4 +28,7 @@
 			</form>
 		</HTMT>
 	</HTMTCODE>
+	<form style="display: inline" action="http://localhost:9002/vehicles/me" method="get">
+		<input type="submit" value="Cancel">
+	</form>
 </html>

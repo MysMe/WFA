@@ -1,7 +1,7 @@
 <html>
 	<HTMTCODE:200>
 		<HTMT:>
-			<form action="http://localhost:9002/parts/create/result" method="post">
+			<form style="display: inline" action="http://localhost:9002/parts/create/result" method="post">
 				<label for="supname">Supplier Name:</label>
 				<input type="text" value="<HTMTVAL:Name>" readonly><br><br>
 				
@@ -20,4 +20,8 @@
 			</form>
 		</HTMT>
 	</HTMTCODE>
+	<form style="display: inline" action="http://localhost:9002/suppliers" method="get">
+	  <input type="hidden" name="searchterm">
+	  <input type="submit" value="Cancel">
+	</form>
 </html>

@@ -225,7 +225,7 @@ namespace webRoute
             return;
         }
 
-        const auto [dStatus, dResult] = serverData::database->query("DELETE FROM " + serverData::tableNames[serverData::SERVICEOPEN] + " WHERE ID = :ID", { {":ID", b.getElement("ID")} });
+        const auto [dStatus, dResult] = serverData::database->query("DELETE FROM " + serverData::tableNames[serverData::SERVICEOPEN] + " WHERE SERVICE = :ID", { {":ID", b.getElement("ID")} });
 
         //No rollback
         //TODO:#
@@ -238,7 +238,7 @@ namespace webRoute
         }
 
 
-        std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " closed a service.\n";
+        std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") closed a service.\n";
         res->end();
     }
 
@@ -873,6 +873,7 @@ namespace webRoute
 
         //If the service is closed (including all previous data)
 
+        //Warrantied parts
         //Service Completer
         //Date Completed
         //Price Paid
@@ -893,6 +894,42 @@ namespace webRoute
             response.add("completer", result[0][0]);
             response.add("completed", result[0][1]);
             response.add("paid", result[0][2]);
+
+            //Find warrantied parts
+            {
+                const auto [lds, ldr] = serverData::database->query("SELECT DATE(:DAT, '-6 month')", { {":DAT", result[0][1]} });
+                if (!lds)
+                {
+                    res->writeStatus(HTTPCodes::INTERNALERROR);
+                    res->end();
+                    return;
+                }
+
+                const auto [partStatus, partResult] = serverData::database->query(
+                    "SELECT P.NAME, PS.PART, PS.QUANTITY FROM " + serverData::tableNames[serverData::SERVICECLOSED] + " AS S " +
+                    "INNER JOIN " + serverData::tableNames[serverData::SERVICEACTIVE] + " AS A ON S.SERVICE = A.ID " +
+                    "INNER JOIN " + serverData::tableNames[serverData::SERVICESHARED] + " AS SS ON A.SERVICE = SS.ID " +
+                    "INNER JOIN " + serverData::tableNames[serverData::PARTSINSERVICE] + " AS PS ON SS.ID = PS.SERVICE " +
+                    "INNER JOIN " + serverData::tableNames[serverData::PARTS] + " AS P ON PS.PART = P.ID " +
+                    "WHERE S.ID != :ID AND S.COMPLETED >= :LOWDATE AND S.COMPLETED <= :HIGHDATE",
+                    { {":ID", q.getElement("ID")}, {":LOWDATE", ldr[0][0]}, {":HIGHDATE", result[0][1]} });
+
+                if (!partStatus)
+                {
+                    res->writeStatus(HTTPCodes::INTERNALERROR);
+                    res->end();
+                    return;
+                }
+
+                for (size_t i = 0; i < partResult.rowCount(); i++)
+                {
+                    responseWrapper temp;
+                    temp.add("name", partResult[i][0]);
+                    temp.add("ID", partResult[i][1]);
+                    temp.add("quanity", partResult[i][2]);
+                    response.add("warrantied", std::move(temp), true);
+                }
+            }
 
             res->tryEnd(response.toData(false));
             return;

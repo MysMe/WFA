@@ -1,5 +1,4 @@
 #include <iostream>
-
 #include "Forwarding.h"
 
 #include <variant>

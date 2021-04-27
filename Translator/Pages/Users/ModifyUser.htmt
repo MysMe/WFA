@@ -1,7 +1,7 @@
 <html>
 	<HTMTCODE:200>
 		<HTMT:>
-			<form action="http://localhost:9002/users/modify/result" method="post">
+			<form style="display: inline" action="http://localhost:9002/users/modify/result" method="post">
 			
 				<input type="hidden" value="<HTMTVAL:ID>" name="ID">
 				
@@ -13,7 +13,7 @@
 				
 				<label for="permissions">Permissions:</label>
 				<input type="text" name="permissions" value="<HTMTVAL:Permissions>"><br><br>
-				<input type="submit" value="Submit">
+				<input type="submit" value="Update">
 			</form>
 		</HTMT>
 	</HTMTCODE>
@@ -29,8 +29,8 @@
 	<HTMTCODE:500>
 		<H1>Internal error!</H1>
 	</HTMTCODE>
-	<form action="http://localhost:9002/users" method="get">
+	<form style="display: inline" action="http://localhost:9002/users" method="get">
 		<input type="hidden" value="" name="username">
-		<input type="submit" value="Return To Users">
+		<input type="submit" value="Cancel">
 	</form>
 </html>

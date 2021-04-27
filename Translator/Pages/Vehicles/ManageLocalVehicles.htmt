@@ -1,7 +1,10 @@
 <html>
+	<form action="http://localhost:9002/home" method="get">
+	  <input type="submit" value="Return to Home Page">
+	</form>
 	<HTMTCODE:200>
 		<form action="http://localhost:9002/vehicles/create" method="get">
-		  <input type="submit" value="New">
+		  <input type="submit" value="Add New Vehicle">
 		</form>
 		<H1>Vehicles:</H1>
 		<table>

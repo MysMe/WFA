@@ -1,8 +1,11 @@
 <html>
+	<form action="http://localhost:9002/home" method="get">
+		<input type="submit" value="Return to Home Page">
+	</form>
 	<HTMTCODE:200>
 		<form action="http://localhost:9002/parts" method="get">
 		  <label for="details">Search:</label>
-		  <input type="text" name="name"><br><br>
+		  <input type="text" name="name">
 		  <input type="submit" value="Search">
 		</form>
 

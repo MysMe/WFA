@@ -1,7 +1,7 @@
 <html>
 	<HTMTCODE:200>
-		<H1>Edit Service:</H1>
-		<form action="http://localhost:9002/services/authorised/part/add/result" method="post">
+		<H1>Add Part To Service:</H1>
+		<form style="display: inline" action="http://localhost:9002/services/authorised/part/add/result" method="post">
 			<input type="hidden" value="<HTMTVAL:service>" name="serviceID"><br>
 			Part ID:
 			<input type="text" name="partID" required><br>
@@ -22,4 +22,8 @@
 	<HTMTCODE:500>
 		<H1>Internal error!</H1>
 	</HTMTCODE>
+	<form style="display: inline" action="http://localhost:9002/services/authorised" method="get">
+		<input type="hidden" value="" name="open">
+		<input type="submit" value="Cancel">
+	</form>
 </html>

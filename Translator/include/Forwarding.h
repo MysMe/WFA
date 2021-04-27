@@ -1,5 +1,6 @@
 #pragma once
 #include <uwebsockets/App.h>
+#include <cassert> //Note that curl mistakenly fails to include <cassert>, yet uses assert, do not reorder
 #include "Curl.h"
 #include "Response.h"
 #include <charconv>

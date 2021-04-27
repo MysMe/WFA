@@ -1,7 +1,7 @@
 <html>
 	<HTMTCODE:200>
 		<HTMT:>
-			<form action="http://localhost:9002/groups/part/result" method="post">
+			<form style="display: inline" action="http://localhost:9002/groups/part/result" method="post">
 				<label for="PID">Part ID:</label>
 				<input type="text" name="ID" required><br><br>
 				<label for="GID">Group ID:</label>
@@ -10,4 +10,8 @@
 			</form>
 		</HTMT>
 	</HTMTCODE>
+	<form style="display: inline" action="http://localhost:9002/groups" method="get">
+		<input type="hidden" value="" name="name">
+		<input type="submit" value="Cancel">
+	</form>
 </html>

@@ -1,5 +1,15 @@
 <html>
+	<form action="http://localhost:9002/home" method="get">
+	  <input type="submit" value="Return to Home Page">
+	</form>
 	<HTMTCODE:200>
+	<style>
+	table, th, td
+	{
+		border: 1px solid black;
+		border-collapse: collapse;
+	}
+	</style>
 		<H1>Unauthorised Services:</H1>
 		<table>
 			<tr>
@@ -14,7 +24,7 @@
 		<H1>Authorised Services:</H1>
 		<table>
 			<tr>
-				<th>Date Requested</th><th>Request</th><th>Current Labour Hours</th><th>Notes</th><td>Review</td>
+				<th>Date Requested</th><th>Request</th><th>Current Labour Hours</th><th>Notes</th><th>Review</th>
 			</tr>
 			<HTMT:Open>
 				<tr>

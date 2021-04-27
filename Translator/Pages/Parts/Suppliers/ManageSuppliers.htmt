@@ -1,14 +1,17 @@
 <html>
+	<form action="http://localhost:9002/parts" method="get">
+		<input type="hidden" value="" name="name">
+		<input type="submit" value="Back to Parts List">
+	</form>
 	<HTMTCODE:200>
-
 		<form action="http://localhost:9002/suppliers" method="get">
 		  <label for="details">Search Term:</label>
-		  <input type="text" name="searchterm"><br><br>
+		  <input type="text" name="searchterm">
 		  <input type="submit" value="Search">
 		</form>
 
 		<form action="http://localhost:9002/suppliers/create" method="get">
-		<input type="submit" value="Create">
+			<input type="submit" value="Create">
 		</form>
 
 		<H1>Suppliers:</H1>

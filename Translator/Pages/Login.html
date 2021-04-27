@@ -1,9 +1,12 @@
 <html>
-	<form action="http://localhost:9002/request" method="post">
+	<form style="display: inline" action="http://localhost:9002/request" method="post">
 	  <label for="username">Username:</label>
 	  <input type="text" name="username" required><br><br>
 	  <label for="password">Password:</label>
 	  <input type="password" name="password" required><br><br>
-	  <input type="submit" value="Submit">
+	  <input type="submit" value="Log In">
+	</form>
+	<form style="display: inline" action="http://localhost:9002/home" method="get">
+	  <input type="submit" value="Cancel">
 	</form>
 </html>

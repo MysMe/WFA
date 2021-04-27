@@ -1,7 +1,7 @@
 <html>
 	<HTMTCODE:200>
 		<HTMT:>
-			<form action="http://localhost:9002/suppliers/create/result" method="post">
+			<form style="display: inline" action="http://localhost:9002/suppliers/create/result" method="post">
 				<label for="username">Name:</label>
 				<input type="text" name="name" required><br><br>
 				
@@ -14,4 +14,8 @@
 			</form>
 		</HTMT>
 	</HTMTCODE>
+	<form style="display: inline" action="http://localhost:9002/suppliers" method="get">
+	  <input type="hidden" name="searchterm">
+	  <input type="submit" value="Cancel">
+	</form>
 </html>

@@ -1,15 +1,20 @@
 <html>
-	<HTMTCODE:200>
-
-	<form action="http://localhost:9002/groups" method="get">
-	  <label for="details">Search:</label>
-	  <input type="text" name="name">
-	  <input type="submit" value="Search">
+	<form action="http://localhost:9002/parts" method="get">
+		<input type="hidden" value="" name="name">
+		<input type="submit" value="Back to Parts List">
 	</form>
+	<HTMTCODE:200>
+		<form action="http://localhost:9002/groups" method="get">
+		  <label for="details">Search:</label>
+		  <input type="text" name="name">
+		  <input type="submit" value="Search">
+		</form>
 
-	<form action="http://localhost:9002/groups/create" method="post">
-		<input type="text" name="name">
-		<input type="submit" value="Create" > </form>
+		<form action="http://localhost:9002/groups/create" method="post">
+			<label for="details">Create New Group by Name</label>
+			<input type="text" name="name">
+			<input type="submit" value="Create"> 
+		</form>
 
 		<H1>Groups:</H1>
 		<table>

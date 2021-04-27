@@ -1,7 +1,7 @@
 <html>
 	<HTMTCODE:200>
 		<HTMT:>
-			<form action="http://localhost:9002/groups/modify/result" method="post">
+			<form style="display: inline" action="http://localhost:9002/groups/modify/result" method="post">
 			
 				<input type="hidden" value="<HTMTVAL:ID>" name="ID">
 				
@@ -26,8 +26,8 @@
 	<HTMTCODE:500>
 		<H1>Internal error!</H1>
 	</HTMTCODE>
-	<form action="http://localhost:9002/groups" method="get">
+	<form style="display: inline" action="http://localhost:9002/groups" method="get">
 	  <input type="hidden" name="name" value="">
-	  <input type="submit" value="Back To Groups">
+	  <input type="submit" value="Cancel">
 	</form>
 </html>

@@ -1,7 +1,7 @@
 <html>
 	<HTMTCODE:200>
 		<HTMT:>
-			<form action="http://localhost:9002/services/authorise/result" method="post">
+			<form style="display: inline" action="http://localhost:9002/services/authorise/result" method="post">
 				<input type="hidden" value="<HTMTVAL:service>" name="ID">
 				
 				<label for="request">Request:</label>
@@ -13,4 +13,8 @@
 			</form>
 		</HTMT>
 	</HTMTCODE>
+	<form style="display: inline" action="http://localhost:9002/services/unauthorised" method="get">
+		<input type="hidden" value="" name="unauthorised">
+		<input type="submit" value="Cancel">
+	</form>
 </html>

@@ -16,8 +16,6 @@ add_subdirectory(../Shared/include build)
 find_package(CURL CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
 
-#
-
 #Dependencies for uWebSockets
 
 #uSockets is not a CMAKE library, so must be manually inlcuded

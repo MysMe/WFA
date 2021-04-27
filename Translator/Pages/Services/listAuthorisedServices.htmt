@@ -1,4 +1,7 @@
 <html>
+	<form action="http://localhost:9002/home" method="get">
+	  <input type="submit" value="Return to Home Page">
+	</form>
 	<HTMTCODE:200>
 		<H1>Authorised Services:</H1>
 		<table>
@@ -14,7 +17,7 @@
 					<td>
 						<table>
 							<tr>
-								<td>Name</td><td>Quantity</td><td>Per-Unit Price</td><td>Remove</td>
+								<td>Name</td><td>Quantity</td><td>Per-Unit Price</td><td><!--Remove Button Row--></td>
 							</tr>
 							<HTMT:parts>
 								<tr>

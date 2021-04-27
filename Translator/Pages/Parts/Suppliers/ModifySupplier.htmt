@@ -1,7 +1,7 @@
 <html>
 	<HTMTCODE:200>
 		<HTMT:>
-			<form action="http://localhost:9002/suppliers/modify/result" method="post">
+			<form style="display: inline" action="http://localhost:9002/suppliers/modify/result" method="post">
 			
 				<input type="hidden" value="<HTMTVAL:ID>" name="ID">
 				
@@ -29,8 +29,8 @@
 	<HTMTCODE:500>
 		<H1>Internal error!</H1>
 	</HTMTCODE>
-	<form action="http://localhost:9002/suppliers" method="get">
+	<form style="display: inline" action="http://localhost:9002/suppliers" method="get">
 		<input type="hidden" value="" name="searchterm">
-		<input type="submit" value="Return To Suppliers">
+		<input type="submit" value="Cancel">
 	</form>
 </html>
