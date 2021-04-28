@@ -5,6 +5,9 @@
 		<input type="hidden" value="" name="closed">
 		<input type="submit" value="Back to Services">
 	</form>
+	<p>
+		Thus page allows a user to see but not modify a closed service, unlike the service overview it also includes a list of parts covered by the warranty.
+	</p>
 	<HTMTCODE:200>
 		<style>
 		table, th, td

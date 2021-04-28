@@ -7,6 +7,7 @@
 
 class responseWrapper
 {
+    //Responses are recursive lists of strings, as such each entry is either a list (potentially with only a single element) of string, or a set of sub-lists
 public:
     using stringContainer = std::vector<std::string>;
     using objectContainer = std::vector<responseWrapper>;
@@ -18,7 +19,6 @@ public:
     };
 
     //An element is either a text value or a collection of text values
-    //using element = std::variant<std::string, responseWrapper>;
     using elementContainer = std::variant<stringContainer, objectContainer>;
 private:
     //Elements are only arrays of strings OR objects, not mixed
@@ -349,50 +349,6 @@ public:
                 if (left != end)
                     ++left;
                 continue;
-
-                //std::vector<element> elements;
-
-
-
-                //auto add = [&]()
-                //{
-                //    std::string_view::const_iterator subdiv;
-                //    if (*subleft == '{')
-                //    {
-                //        //##
-                //        subdiv = match(subleft, blockEnd, '{', '}');
-                //        auto val = fromData({ &*subleft, size_t(subdiv - subleft) });
-                //        if (!val.has_value())
-                //            return FAILED;
-                //        elements.emplace_back(std::move(val.value()));
-                //    }
-                //    else
-                //    {
-                //        subdiv = std::find(subleft, blockEnd, ',');
-                //        elements.emplace_back(std::string(subleft, subdiv));
-                //    }
-                //    subleft = subdiv;
-                //    if (subdiv == blockEnd)
-                //        return ADDED_AT_END;
-                //    ++subleft;
-                //    return ADDED;
-                //};
-
-                ////Loop until no more can be added
-                //auto result = ADDED;
-                //do
-                //{
-                //    result = add();
-                //    if (result == FAILED)
-                //        return std::nullopt;
-                //}
-                //while (result != ADDED_AT_END);
-
-                //ret.elements.emplace_back(key, std::move(elements));
-                //left = std::next(blockEnd);
-                //if (left != end)
-                //    ++left;
-                //continue;
             }
             else
             {
@@ -408,6 +364,7 @@ public:
         return ret;
     }
 
+    //Special overload that formats the data before interpreting
     static std::optional<responseWrapper> fromUnformattedData(std::string data)
     {
 

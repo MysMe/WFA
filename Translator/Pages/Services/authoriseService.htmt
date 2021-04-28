@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page allows an employee to confirm a request, as long as they provide a quote.
+	</p>
 	<HTMTCODE:200>
 		<HTMT:>
 			<form style="display: inline" action="http://localhost:9002/services/authorise/result" method="post">

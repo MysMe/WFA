@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page tells the user if the suppler was created.
+	</p>
 	<HTMTCODE:200>
 		<H1>Supplier created!</H1>
 	</HTMTCODE>

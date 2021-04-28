@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page tells the user if they sucessfully updated their vehicle.
+	</p>
 	<HTMTCODE:200>
 		<H1>Vehicle updated!</H1>
 	</HTMTCODE>

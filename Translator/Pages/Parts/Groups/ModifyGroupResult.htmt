@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page lets the user know if the group name was updated.
+	</p>
 	<HTMTCODE:200>
 		<H1>Group updated!</H1>
 	</HTMTCODE>

@@ -1,4 +1,6 @@
 <html>
+	<p>
+		This page tells the user whether or not they successfully added a vehicle.
 	<HTMTCODE:200>
 		<H1>Vehicle created!</H1>
 	</HTMTCODE>

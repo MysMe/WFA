@@ -1,4 +1,8 @@
 <html>
+	<p>
+		This page lets an employee adjust a service, adding hours or changing the notes.
+		A second link allows them to add parts to the service or close the service.
+	</p>
 	<HTMTCODE:200>
 		<H1>Edit Service:</H1>
 		<form style="display: inline" action="http://localhost:9002/services/authorised/edit/result" method="post">

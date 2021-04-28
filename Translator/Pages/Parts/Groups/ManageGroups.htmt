@@ -3,6 +3,9 @@
 		<input type="hidden" value="" name="name">
 		<input type="submit" value="Back to Parts List">
 	</form>
+	<p>
+		This page lists all existing groups and allows the user to add parts to individual groups.
+	</p>
 	<HTMTCODE:200>
 		<style>
 		table, th, td

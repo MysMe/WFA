@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page allows the user to add new parts from a given supplier.
+	</p>
 	<HTMTCODE:200>
 		<HTMT:>
 			<form style="display: inline" action="http://localhost:9002/parts/create/result" method="post">

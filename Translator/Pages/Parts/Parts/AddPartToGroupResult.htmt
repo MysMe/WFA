@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page lets the user know if the parts were updated.
+	</p>
 	<HTMTCODE:200>
 		<H1>Part Updated!</H1>
 	</HTMTCODE>

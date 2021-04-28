@@ -1,4 +1,8 @@
 <html>
+	<p>
+		This page allows a user to remove part(s) from a given service.
+		The server prevents the number of parts from becoming negative.
+	</p>
 	<HTMTCODE:200>
 		<H1>Remove Part From Service:</H1>
 		<form style="display: inline" action="http://localhost:9002/services/authorised/part/remove/result" method="post">

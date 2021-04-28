@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page tells the user whether they sucessfully deleted another user account.
+	</p>
 	<HTMTCODE:200>
 		<H1>User deleted!</H1>
 	</HTMTCODE>

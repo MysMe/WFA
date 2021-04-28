@@ -2,6 +2,7 @@
 #include "Network.h"
 #include "Response.h"
 
+//Simple string conversion function
 std::optional<double> getPartPrice(std::string_view price, std::string_view quantity)
 {
     {
@@ -19,14 +20,6 @@ std::optional<double> getPartPrice(std::string_view price, std::string_view quan
 
 namespace webRoute
 {
-	/*
-	Create service request (user-side)
-	Authorise a request
-	Update a request
-	Close a request
-	Reopen a request (clearing all closure data)
-	*/
-
     void createRequest(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body& b, const query& q)
     {
         if (!b.containsAll({ "VID", "request"}))
@@ -75,7 +68,7 @@ namespace webRoute
         }
         else
         {
-            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " requested a new service.\n";
+            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") requested a new service.\n";
         }
         res->end();
     }
@@ -134,7 +127,7 @@ namespace webRoute
 
         if (!status)
         {
-            //TODO:# Add rollback
+            //Note that there is no rollback, a real-world system would need to ensure both this operation and the next complete successfully
             //Internal server error
             res->writeStatus(HTTPCodes::INTERNALERROR);
             res->end();
@@ -145,13 +138,13 @@ namespace webRoute
 
         if (!oStatus)
         {
-            //TODO:# Add rollback
+            //Note that there is no rollback, a real-world system would need to ensure both this operation and the next complete successfully
             //Internal server error
             res->writeStatus(HTTPCodes::INTERNALERROR);
         }
         else
         {
-            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " authorised a service as \"" + user + "\".\n";
+            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") authorised a service as \"" + user + "\".\n";
         }
         res->end();
     }
@@ -192,7 +185,7 @@ namespace webRoute
         }
         else
         {
-            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " updated a service.\n";
+            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") updated a service.\n";
         }
         res->end();
     }
@@ -227,10 +220,9 @@ namespace webRoute
 
         const auto [dStatus, dResult] = serverData::database->query("DELETE FROM " + serverData::tableNames[serverData::SERVICEOPEN] + " WHERE SERVICE = :ID", { {":ID", b.getElement("ID")} });
 
-        //No rollback
-        //TODO:#
         if (!dStatus)
         {
+            //Note that there is no rollback, a real-world system would need to ensure both this operation and the next complete successfully
             //Internal server error
             res->writeStatus(HTTPCodes::INTERNALERROR);
             res->end();
@@ -275,7 +267,7 @@ namespace webRoute
             { {":ID", b.getElement("ID")} });
         if (!sStatus)
         {
-            //TODO:# Add rollback
+            //Note that there is no rollback, a real-world system would need to ensure both this operation and the next complete successfully
             //Internal server error
             res->writeStatus(HTTPCodes::INTERNALERROR);
             res->end();
@@ -283,16 +275,10 @@ namespace webRoute
         }
         else
         {
-            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " reopened a service.\n";
+            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") reopened a service.\n";
         }
         res->end();
     }
-
-    /*
-    Add part to service
-    Remove part from service
-    List parts used in service
-    */
 
     void addPartToService(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body& b, const query& q)
     {
@@ -345,7 +331,7 @@ namespace webRoute
             }
             else
             {
-                std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " added existing parts to a service.\n";
+                std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") added existing parts to a service.\n";
             }
             res->end();
             return;
@@ -365,7 +351,7 @@ namespace webRoute
         }
 
         {
-            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " added new parts to a service.\n";
+            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") added new parts to a service.\n";
         }
         res->end();
     }
@@ -446,7 +432,7 @@ namespace webRoute
             }
             else
             {
-                std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " removed a set of existing parts from a service.\n";
+                std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") removed a set of existing parts from a service.\n";
             }
             res->end();
             return;
@@ -463,21 +449,11 @@ namespace webRoute
             }
             else
             {
-                std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " removed some existing parts from a service.\n";
+                std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") removed some existing parts from a service.\n";
             }
             res->end();
         }
     }
-
-    /*
-    Get open services by client
-    Get closed services by client
-    Get unauthorised services by client
-
-    Get services by authoriser
-    Get services by closer
-    Get service requests by date
-    */
 
     void searchServices(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body& b, const query& q)
     {

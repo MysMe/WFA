@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page lets the user know if the service was sucessfully updated.
+	</p>
 	<HTMTCODE:200>
 		<H1>Service updated!</H1>
 	</HTMTCODE>

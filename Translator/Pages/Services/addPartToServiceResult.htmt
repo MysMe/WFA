@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page tells the user if the parts were added sucessfully.
+	</p>
 	<HTMTCODE:200>
 		<H1>Parts added!</H1>
 	</HTMTCODE>

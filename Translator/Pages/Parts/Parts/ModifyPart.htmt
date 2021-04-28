@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page allows users to update existing parts, the supplier can not be changed nor can the ID.
+	</p>
 	<HTMTCODE:200>
 		<HTMT:>
 			<form action="http://localhost:9002/suppliers/modify/result" method="post">

@@ -4,20 +4,6 @@
 
 namespace webRoute
 {
-	/*
-	Add supplier
-	Update supplier
-
-	Add part group
-	Get parts in group
-
-	Add part
-	Update part
-	Search parts by supplier
-	Search parts by (partial) name
-	*/
-
-
     void createSupplier(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body& b, const query& q)
     {
         if (!b.hasElement("name") || b.getElement("name").empty())
@@ -48,7 +34,7 @@ namespace webRoute
         }
         else
         {
-            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " created new supplier (\"" << b.getElement("name") << "\").\n";
+            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") created new supplier (\"" << b.getElement("name") << "\").\n";
         }
         res->end();
     }
@@ -90,7 +76,7 @@ namespace webRoute
         }
         else
         {
-            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " updated supplier (\"" << b.getElement("name") << "\").\n";
+            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") updated supplier (\"" << b.getElement("name") << "\").\n";
         }
         res->end();
     }
@@ -226,7 +212,7 @@ namespace webRoute
         }
         else
         {
-            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " created new part group (\"" << b.getElement("name") << "\").\n";
+            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") created new part group (\"" << b.getElement("name") << "\").\n";
         }
         res->end();
     }
@@ -259,7 +245,7 @@ namespace webRoute
         }
         else
         {
-            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " updated part group (\"" << b.getElement("name") << "\"/\"" << b.getElement("rename") << "\").\n";
+            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") updated part group (\"" << b.getElement("name") << "\"/\"" << b.getElement("rename") << "\").\n";
         }
         res->end();
     }
@@ -305,7 +291,7 @@ namespace webRoute
                 response.add("Groups", std::move(temp), true);
             }
 
-            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " searched part groups for " << q.getElement("name") << ".\n";
+            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") searched part groups for " << q.getElement("name") << ".\n";
             res->tryEnd(response.toData(false));
         }
         else
@@ -346,7 +332,7 @@ namespace webRoute
             return;
         }
 
-        std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " selected group " << q.getElement("ID") << ".\n";
+        std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") selected group " << q.getElement("ID") << ".\n";
 
         if (result.rowCount() != 0)
         {
@@ -411,7 +397,7 @@ namespace webRoute
         }
         else
         {
-            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " created new part (\"" << b.getElement("name") << "\").\n";
+            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") created new part (\"" << b.getElement("name") << "\").\n";
         }
         res->end();
     }
@@ -453,7 +439,7 @@ namespace webRoute
         }
         else
         {
-            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " updated part (\"" << b.getElement("ID") << "\").\n";
+            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") updated part (\"" << b.getElement("ID") << "\").\n";
         }
         res->end();
     }
@@ -523,7 +509,7 @@ namespace webRoute
             response.add("Parts", std::move(temp), true);
         }
 
-        std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " searched parts for " << (q.hasElement("name", true) ? q.getElement("name") : q.getElement("group")) << ".\n";
+        std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") searched parts for " << (q.hasElement("name", true) ? q.getElement("name") : q.getElement("group")) << ".\n";
         res->tryEnd(response.toData(false));
     }
 
@@ -558,7 +544,7 @@ namespace webRoute
             return;
         }
 
-        std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " selected part " << q.getElement("ID") << ".\n";
+        std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") selected part " << q.getElement("ID") << ".\n";
 
         if (result.rowCount() != 0)
         {

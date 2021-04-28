@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page tells the user whether they sucessfully updated another user account.
+	</p>
 	<HTMTCODE:200>
 		<H1>User updated!</H1>
 	</HTMTCODE>

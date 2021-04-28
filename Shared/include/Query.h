@@ -6,6 +6,7 @@
 
 namespace //Anonymous namespace to only allow query and body to see/use this function
 {
+    //Parses values from a "name=value" style to a map
     std::unordered_map<std::string, std::string> parseURLValues(std::string_view source)
     {
         std::unordered_map<std::string, std::string> ret;
@@ -37,93 +38,64 @@ namespace //Anonymous namespace to only allow query and body to see/use this fun
         }
         return ret;
     }
+
+    //HTTP queries and bodies both share similar key/value formats, the major difference is the "source" (the HTTP request or body)
+    class queryBase
+    {
+        std::unordered_map<std::string, std::string> elements;
+
+    public:
+        queryBase() = default;
+        queryBase(std::unordered_map<std::string, std::string>&& elem) : elements(std::move(elem)) {}
+
+        bool hasElement(const std::string & name, bool allowEmpty = false) const
+        {
+            if (!allowEmpty)
+                return elements.count(name) != 0 && !elements.at(name).empty();
+            else
+                return elements.count(name) != 0;
+        }
+        std::string_view getElement(const std::string & name) const
+        {
+            return elements.at(name);
+        }
+
+        bool containsAll(const std::vector<std::string>&strings, bool allowEmpty = false) const
+        {
+            for (const auto i : strings)
+            {
+                if (!hasElement(i, allowEmpty))
+                    return false;
+            }
+            return true;
+        }
+
+        bool containsAny(const std::vector<std::string>&strings, bool allowEmpty = false) const
+        {
+            for (const auto i : strings)
+            {
+                if (hasElement(i, allowEmpty))
+                    return true;
+            }
+            return false;
+        }
+        auto begin() const { return elements.cbegin(); }
+        auto end() const { return elements.cend(); }
+    };
 }
 
-class query
+class query : public queryBase
 {
-    std::unordered_map<std::string, std::string> elements;
-
+    //A query should be unique from a body, so must be kept as a separate class
+    //The alternate constructor helps prevent it from being incorrectly created
 public:
     query() = default;
-    query(uWS::HttpRequest* req) : elements(parseURLValues(req->getQuery())) {}
-
-    bool hasElement(const std::string& name, bool allowEmpty = false) const
-    {
-        if (!allowEmpty)
-            return elements.count(name) != 0 && !elements.at(name).empty();
-        else
-            return elements.count(name) != 0;
-    }
-    std::string_view getElement(const std::string& name) const
-    {
-        return elements.at(name);
-    }
-
-    bool containsAll(const std::vector<std::string>& strings, bool allowEmpty = false) const
-    {
-        for (const auto i : strings)
-        {
-            if (!hasElement(i, allowEmpty))
-                return false;
-        }
-        return true;
-    }
-
-    bool containsAny(const std::vector<std::string>& strings, bool allowEmpty = false) const
-    {
-        for (const auto i : strings)
-        {
-            if (hasElement(i, allowEmpty))
-                return true;
-        }
-        return false;
-    }
-    auto begin() const { return elements.cbegin(); }
-    auto end() const { return elements.cend(); }
+    query(uWS::HttpRequest* req) : queryBase(parseURLValues(req->getQuery())) {}
 };
 
-class body
+class body : public queryBase
 {
-    std::unordered_map<std::string, std::string> elements;
-
 public:
-
     body() = default;
-    body(std::string_view contents) : elements(parseURLValues(contents)) {}
-
-    bool hasElement(const std::string& name, bool allowEmpty = false) const
-    {
-        if (allowEmpty)
-            return elements.count(name) != 0 && !elements.at(name).empty();
-        else
-            return elements.count(name) != 0;
-    }
-    std::string_view getElement(const std::string& name) const
-    {
-        return elements.at(name);
-    }
-
-    bool containsAll(const std::vector<std::string>& strings, bool allowEmpty = false) const
-    {
-        for (const auto i : strings)
-        {
-            if (!hasElement(i, allowEmpty))
-                return false;
-        }
-        return true;
-    }
-
-    bool containsAny(const std::vector<std::string>& strings, bool allowEmpty = false) const
-    {
-        for (const auto i : strings)
-        {
-            if (hasElement(i, allowEmpty))
-                return true;
-        }
-        return false;
-    }
-
-
-    auto begin() const { return elements.cbegin(); }
-    auto end() const { return elements.cend(); }
+    body(std::string_view contents) : queryBase(parseURLValues(contents)) {}
 };

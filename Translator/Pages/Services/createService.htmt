@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page lets a user create a new service, giving a textual message for the employees.
+	</p>
 	<HTMTCODE:200>
 		<HTMT:>
 			<form style="display: inline" action="http://localhost:9002/services/create/result" method="post">

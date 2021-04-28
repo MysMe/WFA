@@ -11,10 +11,11 @@
 #include "Response.h"
 #include "Query.h"
 
+//Textual translations for each HTTP code
 namespace HTTPCodes
 {
     constexpr auto OK                   = "200";
-    constexpr auto NOCONTENT_NOREDIRECT = "204"; //Note that a browser recieving code 204 may choose to not redirect from the page
+    constexpr auto NOCONTENT_NOREDIRECT = "204"; //Note that a browser recieving code 204 may choose to not redirect from the page, prefer 404 instead (as appropriate)
     constexpr auto BADREQUEST           = "400";
     constexpr auto UNAUTHORISED         = "401";
     constexpr auto FORBIDDEN            = "403";
@@ -23,6 +24,7 @@ namespace HTTPCodes
     constexpr auto INTERNALERROR        = "500";
 }
 
+//Simplifies the extraction of HTTP data (query, body, etc.) and executes it on a function pointer
 class HttpCallWrapper
 {
     std::function<void(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body&, const query&)> callback;
@@ -74,6 +76,7 @@ public:
     }
 };
 
+//Simplifies the extraction, reading and setting of cookies
 class cookieManager
 {
     std::unordered_map<std::string, std::string> values;
@@ -142,6 +145,8 @@ public:
     }
 };
 
+//Note that these values are arbitrary, a user could have an authLevel greater than any of these
+//As such, they represent a "lower-bound" permission level
 enum class authLevel
 {
     client,
@@ -150,6 +155,7 @@ enum class authLevel
     superuser
 };
 
+//A class to handle session tracking, creation and querying
 class authenticator
 {
     //Note that nearly all functions in this class are gross simplifications of real functions
@@ -188,11 +194,16 @@ public:
         return ret;
     }
 
+    //Trivially reversible "hashing" function, proof of concept only
     static std::string hash(std::string_view val)
     {
-        return std::string(val);
+        std::string ret{ val };
+        for (auto& i : ret)
+            i = ~i;
+        return ret;
     }
 
+    //Attempts to authenticate a user from a given username and password
     template <bool SSL>
     bool request(uWS::HttpResponse<SSL>* res, uWS::HttpRequest* req, const body& b)
     {
@@ -218,6 +229,8 @@ public:
         }
         assert(matches.rowCount() == 1);
 
+        //Session IDs are assigned randomly, repeating forever until a free ID is found
+        //If there are no free IDs this will logically cause an infinite loop (no ID can be provided, no IDs can be freed because the server is trying to assign an ID)
         std::random_device rd;
         std::default_random_engine random(rd());
         std::uniform_int_distribution<sessionID> dist(1, std::numeric_limits<sessionID>::max());
@@ -248,7 +261,7 @@ public:
         return true;
     }
 
-    //Can safely be called on any request, regardless of whether it is authenticated
+    //Can safely be called on any request, regardless of whether it is authenticated or not
     template <bool SSL>
     bool release(uWS::HttpResponse<SSL>* res, uWS::HttpRequest* req)
     {

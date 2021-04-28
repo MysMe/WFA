@@ -1,4 +1,8 @@
 <html>
+	<p>
+		This page allows a user to update their vehicle details.
+		As the make, model and year of a vehicle can not change, these can not be changed by this form.
+	</p>
 	<HTMTCODE:200>
 		<HTMT:>
 			<form style="display: inline" action="http://localhost:9002/vehicles/modify/result" method="post">

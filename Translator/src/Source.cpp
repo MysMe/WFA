@@ -9,6 +9,7 @@
 
 #include "Query.h"
 
+//Finds a "tag" (a word followed by a symbol), tracking opening and closing pairs to ensure that the tag "depth" remains consistent
 std::string_view::const_iterator tagSearch(std::string_view::const_iterator begin, std::string_view::const_iterator end, std::string_view prefix, std::string_view postfix)
 {
     const char prefix_sentinel = prefix.front();
@@ -44,17 +45,19 @@ std::string_view::const_iterator tagSearch(std::string_view::const_iterator begi
 
 class translation;
 
+//A single (non-tag-pair) HTMT statement
 class translationValue
 {
 public:
     enum class state
     {
-        access,
-        HTML,
-        translation, 
-        query
+        access, //HTMTVAL
+        HTML, //Raw HTML
+        translation, //Sub-level HTMT
+        query //HTMTQUERY
     };
 
+    //The contents are either a string (the name of a variable for state::access, the HTML for state::HTML or the query name for state::query) or a sub-translation.
     using value_type = std::variant<std::string, std::unique_ptr<translation>>;
     value_type value;
     state valueType;
@@ -77,9 +80,11 @@ public:
     void apply(std::string& source, const responseWrapper& data, long httpCode, const query& q) const;
 };
 
+//A conditional section of HTMT
 class translationCondition
 {
     //Given that everything is a string, it doesn't make sense to have numeric comparisons
+    //As such, only equal and not-equal are currently provided
 
     struct subCondition
     {
@@ -124,6 +129,7 @@ class translationCondition
         }
     };
 
+    //A conjunction is a method of combining multiple conditions (e.g. A && B, A || B)
     enum class conjunction
     {
         and,
@@ -131,6 +137,7 @@ class translationCondition
         //The parse function relies on the ordering of this enum
     };
 
+    //There must be one fewer conjunction than there are conditions, each condition is parsed left to right
     std::vector<subCondition> conditions;
     std::vector<conjunction> conjunctions;
 
@@ -227,14 +234,15 @@ public:
     }
 };
 
+//A collection of HTMT conditions, sections, accesses etc.
 class translation
 { 
     enum class matchType
     {
-        always,
-        tag,
-        code,
-        condition
+        always, //This translation always applies
+        tag, //This translation iterates over a collection of HTMT values
+        code, //This translation applies if the HTML code matches a given value
+        condition //This translation applies if a condition is met
         //The parse function relies on the ordering of this enum
     };
 
@@ -484,7 +492,8 @@ void translationValue::apply(std::string& source, const responseWrapper& data, l
     }
 }
 
-
+//Generic base class for the other wrappers
+//Wraps around HTMT source code, allowing it to be "applied" (translated)
 class webpageWrapper
 {
 protected:
@@ -509,6 +518,7 @@ public:
 
 };
 
+//A special wrapper that forwards the request to the back-end server and translates using the response.
 class forwardingWrapper final : public webpageWrapper
 {
     translation data;
@@ -614,6 +624,7 @@ public:
     }
 };
 
+//A wrapper that only uses static data, only accepts raw HTML (HTMT doesn't apply as no values can be accessed and there is no HTTP code to read)
 class staticWrapper final : public webpageWrapper
 {
     std::string data;
@@ -629,90 +640,7 @@ public:
     }
 };
 
-/*
-<table><tr><th>Owner</th><th>Plate</th><th>Year</th></tr><HTMT:Vehicles><tr><td><HTMTVAL:Owner><tr><td><HTMTVAL:Plate><tr><td><HTMTVAL:Year></td></tr></HTMT></table>
-*/
-
-//std::string testTranslate()
-//{
-//    const auto expr = 
-//        translation::parse("<table><tr><th>Owner</th><th>Plate</th><th>Year</th></tr><HTMT:Vehicles><tr><td><HTMTVAL:Owner></td><td><HTMTVAL:Plate></td><td><HTMTVAL:Year></td></tr></HTMT></table>");
-//
-//    responseWrapper res;
-//    {
-//        {
-//            responseWrapper temp;
-//            temp.add("Owner", "A");
-//            temp.add("Plate", "ABC");
-//            temp.add("Year", "2000");
-//            res.add("Vehicles", std::move(temp));
-//        }
-//        {
-//            responseWrapper temp;
-//            temp.add("Owner", "B");
-//            temp.add("Plate", "DEF");
-//            temp.add("Year", "2005");
-//            res.add("Vehicles", std::move(temp));
-//        }
-//        {
-//            responseWrapper temp;
-//            temp.add("Owner", "C");
-//            temp.add("Plate", "GHI");
-//            temp.add("Year", "2010");
-//            res.add("Vehicles", std::move(temp));
-//        }
-//    }
-//
-//    translation populate;
-//    populate.tagName = "Vehicles";
-//    {
-//        populate.values.emplace_back(translationValue::asHTML("<tr><td>"));
-//        populate.values.emplace_back(translationValue::asAccess("Owner"));
-//        populate.values.emplace_back(translationValue::asHTML("</td><td>"));
-//        populate.values.emplace_back(translationValue::asAccess("Plate"));
-//        populate.values.emplace_back(translationValue::asHTML("</td><td>"));
-//        populate.values.emplace_back(translationValue::asAccess("Year"));
-//        populate.values.emplace_back(translationValue::asHTML("</td></tr>"));
-//    }
-//
-//    translation test;
-//    {
-//        test.values.emplace_back(translationValue::asHTML("<table><tr><th>Owner</th><th>Plate</th><th>Year</th></tr>"));
-//        test.values.emplace_back(translationValue::asTranslation(std::move(populate)));
-//        test.values.emplace_back(translationValue::asHTML("</table>"));
-//    }
-//    std::string out;
-//    //test.apply(out, res);
-//    expr.apply(out, res);
-//    return out;
-//}
-
-void discard()
-{
-    uWS::SSLApp app;
-    app.listen(9002, [](auto*) {});
-    app.any("/*", forward);
-    //app.get("/t", [](auto* res, auto* req) {res->end(testTranslate()); });
-    //app.get("/user/me", forwardingWrapper(
-    //    translation::parse("<table><tr><th>Username</th><th>Permissions</th></tr><HTMT:><tr><td><HTMTVAL:Username></td><td><HTMTVAL:Permissions></td></tr></HTMT></table>")));
-    std::cout << "Ready to forward (9002).\n";
-    app.run();
-    std::cin.ignore();
-}
-
-
-void testConnect()
-{
-    requestWrapper request("localhost:9001/request");
-    const auto r1 = request.post("username=ADMIN&password=ADMIN");
-    request.retarget("localhost:9001/user/me");
-    const auto r2 = request.get();
-    const auto pr = responseWrapper::fromData(r2.response);
-    std::cout << pr.value().toData(true);
-
-    std::cin.ignore();
-}
-
+//Loads pages and adds appropriate links
 bool linkPages(uWS::SSLApp& app, const std::string& linkFile)
 {
     std::ifstream input{ linkFile };
@@ -725,6 +653,9 @@ bool linkPages(uWS::SSLApp& app, const std::string& linkFile)
     std::string line;
     while (std::getline(input, line))
     {
+        //The line must start with at least two letters and a ':'
+        //If the line starts with '#' then it is a comment and can be skipped
+        //Empty lines are skipped
         if (line.empty() || line[0] == '#')
             continue;
         if (line.size() < 4 ||
@@ -744,20 +675,22 @@ bool linkPages(uWS::SSLApp& app, const std::string& linkFile)
 
         const std::string webDirectory{ line.cbegin() + 3, div };
 
+        //If this is a [S]tatic link (it does not forward to the back-end)
         if (line[1] == 'S')
         {
             const std::string fileDirectory{ div + 1, line.cend() };
             std::cout << "Linked page \"" + webDirectory + "\" to local page \"" + fileDirectory + "\".\n";
+            //If this is a [P]OST request
             if (line[0] == 'P')
             {
                 app.post(webDirectory, staticWrapper(fileDirectory));
             }
-            else
+            else //This is a [G]ET request
             {
                 app.get(webDirectory, staticWrapper(fileDirectory));
             }
         }
-        else
+        else //This is a [F]orwarding link
         {
             const auto secDiv = std::find(div + 1, line.cend(), ':');
             const std::string fileDirectory{ div + 1, secDiv };
@@ -766,11 +699,12 @@ bool linkPages(uWS::SSLApp& app, const std::string& linkFile)
 
             std::cout << "Linked page \"" + webDirectory + "\" to local page \"" + fileDirectory + "\" which forwards to \"" + target + "\".\n";
 
+            //If this is a [P]OST request
             if (line[0] == 'P')
             {
                 app.post(webDirectory, forwardingWrapper(fileDirectory, target));
             }
-            else
+            else //This is a [G]ET request
             {
                 app.get(webDirectory, forwardingWrapper(fileDirectory, target));
             }
@@ -781,13 +715,12 @@ bool linkPages(uWS::SSLApp& app, const std::string& linkFile)
 
 int main(int argc, char** argv)
 {
-    //testTranslate();
-    //discard();
     uWS::SSLApp app;
     app.listen(9002, [](auto*) {});
+    //Default response is simply the text "Bad translation" - not to be confused the with the server response "Bad request".
     app.any("/*", [](auto* req, auto* res) {req->end("Bad translation."); });
     linkPages(app, "../Pages/Link.txt");
     std::cout << "Linking complete.\n";
+    //App will run until program termination
     app.run();
-    std::cin.ignore();
 }

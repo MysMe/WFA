@@ -1,4 +1,8 @@
 <html>
+	<p>
+		The user creation page allows for new users to be added without registering.
+		The server prevents users being added with higher permissions than the user adding them.
+	</p>
 	<HTMTCODE:200>
 		<HTMT:>
 			<form action="http://localhost:9002/users/create/result" method="post">

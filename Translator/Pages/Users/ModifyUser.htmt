@@ -1,4 +1,8 @@
 <html>
+	<p>
+		This page allows a user to update details for a given account.
+		The server prevents users from having their permissions upgraded beyond the level of the person changing the value.
+	</p>
 	<HTMTCODE:200>
 		<HTMT:>
 			<form style="display: inline" action="http://localhost:9002/users/modify/result" method="post">

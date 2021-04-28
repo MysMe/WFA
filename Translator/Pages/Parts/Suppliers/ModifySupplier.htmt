@@ -1,4 +1,8 @@
 <html>
+	<p>
+		This page lets the user update the name, phone or email address of a supplier.
+		All suppliers require a name but not a phone number or email address.
+	</p>
 	<HTMTCODE:200>
 		<HTMT:>
 			<form style="display: inline" action="http://localhost:9002/suppliers/modify/result" method="post">

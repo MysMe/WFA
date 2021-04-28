@@ -4,12 +4,6 @@
 
 namespace webRoute
 {
-	/*
-	Add vehicle
-	Remove vehicle
-	Update vehicle
-	*/
-
     void createVehicle(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, const body& b, const query& q)
     {
         if (!b.containsAll({ "plate", "make", "model", "owner", "year", "colour" }))
@@ -55,7 +49,7 @@ namespace webRoute
         }
         else
         {
-            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " added new vehicle for (\"" << b.getElement("owner") << "\").\n";
+            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") added new vehicle for (\"" << b.getElement("owner") << "\").\n";
         }
         res->end();
     }

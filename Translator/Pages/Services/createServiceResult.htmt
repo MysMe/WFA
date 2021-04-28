@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page lets the user know if the service was created sucessfully.
+	</p>
 	<HTMTCODE:200>
 		<H1>Service created!</H1>
 	</HTMTCODE>

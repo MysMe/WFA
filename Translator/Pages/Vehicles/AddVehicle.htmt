@@ -1,4 +1,9 @@
 <html>
+	<p>
+		This page allows a user to input details about a vehicle.
+		Vehicle number plates must be unique (across all users).
+		If the user has admin permissions, they will be able to set a user ID, allowing them to add vehicles for other users.
+	</p>
 	<HTMTCODE:200>
 		<HTMT:>
 			<form style="display: inline" action="http://localhost:9002/vehicles/create/result" method="post">

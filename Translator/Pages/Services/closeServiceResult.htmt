@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page lets the user know if they sucessfully closed the service.
+	</p>
 	<HTMTCODE:200>
 		<H1>Service closed!</H1>
 	</HTMTCODE>

@@ -3,6 +3,10 @@
 		<input type="hidden" value="" name="name">
 		<input type="submit" value="Back to Parts List">
 	</form>
+	<p>
+		This page lists all suppliers and allows user to update the details.
+		Suppliers can be searched by their name, phone number or email.
+	</p>
 	<HTMTCODE:200>
 		<style>
 		table, th, td

@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page lets the user know if the supplier was updated.
+	</p>
 	<HTMTCODE:200>
 		<H1>Supplier updated!</H1>
 	</HTMTCODE>

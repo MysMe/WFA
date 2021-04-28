@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page lets the user know if the service was authorised.
+	</p>
 	<HTMTCODE:200>
 		<H1>Service authorised!</H1>
 	</HTMTCODE>

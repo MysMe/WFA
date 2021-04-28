@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page lets the user know if the part was successfully created.
+	</p>
 	<HTMTCODE:200>
 		<H1>Part created!</H1>
 	</HTMTCODE>

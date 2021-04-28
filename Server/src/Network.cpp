@@ -6,6 +6,7 @@
 #include "WebRoutes/Services.h"
 #include "curl/curl.h"
 
+//The main linking of the system, matches each request to a specific function
 void net()
 {
     uWS::SSLApp app;
@@ -55,6 +56,7 @@ void net()
     app.get("/service/search", HttpCallWrapper(webRoute::searchServices));
     app.get("/service/select", HttpCallWrapper(webRoute::selectService));
 
+    //Display all current tables but do not send them back to the user (In a real-world system, this would allow for an easy DOS attack)
     app.get("/debug/displayTables", [](auto* res, auto* req)
         {
             std::cout << "Displaying tables:\n";
@@ -127,6 +129,7 @@ void net()
             res->end();
         });
 
+    //Return HTTP code 200 (OK) but no other data
     app.any("/ping", [](auto* res, auto* req) 
         { 
             if (serverData::auth->hasSession(req))
@@ -140,6 +143,7 @@ void net()
             res->end();
         });
 
+    //Default, worst-case response
     app.any("/*", [](auto* res, auto* req) 
         {
             res->writeStatus(HTTPCodes::BADREQUEST);

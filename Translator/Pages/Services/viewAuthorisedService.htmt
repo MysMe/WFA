@@ -5,6 +5,9 @@
 		<input type="hidden" value="" name="closed">
 		<input type="submit" value="Back to Services">
 	</form>
+	<p>
+		This page reviews an open service but doesn't allow the user to change it.
+	</p>
 	<HTMTCODE:200>
 		<style>
 		table, th, td

@@ -2,6 +2,10 @@
 	<form action="http://localhost:9002/home" method="get">
 	  <input type="submit" value="Return to Home Page">
 	</form>
+	<p>
+		From this page, the different users of the system can be modified (e.g. changing name or password), deleted. New users may also be added.
+		The list of users can be searched by partial username.
+	</p>
 	<HTMTCODE:200>
 		<style>
 		table, th, td

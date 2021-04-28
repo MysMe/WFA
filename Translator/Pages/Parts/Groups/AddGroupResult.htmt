@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page tells the user if the group was added.
+	</p>
 	<HTMTCODE:200>
 		<H1>Group created!</H1>
 	</HTMTCODE>

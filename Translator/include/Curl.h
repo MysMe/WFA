@@ -3,9 +3,12 @@
 #include <vector>
 #include <string>
 
+//A wrapper around a single curl instance, adding RAII semantics
 class curlwrapper
 {
     CURL* object = nullptr;
+    
+    //Note that this destructs the object
     void tidy()
     {
         if (object != nullptr)
@@ -39,9 +42,11 @@ public:
     }
 
     CURL* data() { return object; }
-    const CURL* data() const { return object; }
+    CURL* const data() const { return object; }
+    //Implicit conversion operator
     operator CURL* () { return object; }
-    operator const CURL* () const { return object; }
+    //Implicit const conversion operator
+    operator CURL* const () const { return object; }
     bool valid() const { return object != nullptr; }
 
     void perform()
@@ -50,6 +55,7 @@ public:
     }
 };
 
+//A collection of curl objects, allowing for more efficient multiple polling
 class multicurlwrapper
 {
 public:
@@ -112,14 +118,22 @@ public:
     }
 };
 
+//A HTTP response
 struct APIResponse
 {
     std::vector<std::pair<std::string, std::string>> headers;
+
+    //The body of the response
     std::string response;
+
+    //HTTP Code
     long response_code = 0;
+
+    //In seconds
     double responseTime = 0;
 
-    //Header fields that will be copied to the response
+    //Header fields that will be copied (forwarded) to the response
+    //A curl objects aren't browsers, they do not natively handle these headers
     static constexpr auto allowedHeaders =
     {
         "Set-Cookie",
@@ -135,6 +149,7 @@ struct APIResponse
         curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME, &responseTime);
     }
 
+    //CUrl has a slightly arcane method of writing headers to strings
     static size_t writeHeaders(char* buffer, size_t size, size_t nitems, decltype(headers)* data)
     {
         const auto div = std::find(buffer, buffer + nitems, ':');
@@ -167,6 +182,8 @@ struct APIResponse
     }
 };
 
+//A nicely formatted HTTP request, can be reassigned or divided between POST/GET requests
+//Potentially may be made asynchronous
 class requestWrapper
 {
     static size_t dataWrite(void* dataptr, size_t size, size_t nmemb, std::string* data)
@@ -213,6 +230,7 @@ public:
         return *this;
     }
 
+    //Overwrites any existing cookies
     void setCookies(const std::string& values)
     {
         curl_easy_setopt(curl, CURLOPT_COOKIE, values.c_str());

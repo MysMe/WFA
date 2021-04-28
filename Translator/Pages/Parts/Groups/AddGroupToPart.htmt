@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page lets the user link a part to a group from a given group ID (not to be confused with the page that does so from the part ID).
+	</p>
 	<HTMTCODE:200>
 		<HTMT:>
 			<form style="display: inline" action="http://localhost:9002/groups/part/result" method="post">

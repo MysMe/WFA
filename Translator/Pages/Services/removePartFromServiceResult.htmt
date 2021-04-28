@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page lets the user know if the parts were removed sucessfully.
+	</p>
 	<HTMTCODE:200>
 		<H1>Parts removed!</H1>
 	</HTMTCODE>

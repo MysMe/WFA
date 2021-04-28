@@ -47,7 +47,7 @@ namespace webRoute
         }
         else
         {
-            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << " created new user (\"" << b.getElement("username") << "\").\n";
+            std::cout << "Session (" << serverData::auth->getSessionID(req).value() << ") created new user (\"" << b.getElement("username") << "\").\n";
         }
         res->end();
     }

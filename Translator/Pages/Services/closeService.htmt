@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page allows an employee to finalise the service data before closing it.
+	</p>
 	<HTMTCODE:200>
 		<H1>Close Service:</H1>
 		<form style="display: inline" action="http://localhost:9002/services/authorised/close/result" method="post">

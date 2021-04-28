@@ -8,6 +8,7 @@
 
 
 //A simple wrapper around SQLite error codes
+//Is either good or not
 struct SQLCode final
 {
     int errorCode = SQLITE_OK;
@@ -129,6 +130,7 @@ public:
     const std::string& getColName(size_t col) const { return colNames[col]; }
 };
 
+//Represents a database
 class sqlite3DB final
 {
     sqlite3* database;
@@ -190,5 +192,7 @@ public:
 
 class body;
 
+//Simple function to wrap the input in %%'s, useful for some SQL queries
 std::string generateLIKEArgument(std::string_view val);
+//Function to modify the inputs in order to create an SQL statement that LIKE matches all inputs
 std::string generateUpdateStatement(const body& b, const std::unordered_map<std::string, std::string>& relations);

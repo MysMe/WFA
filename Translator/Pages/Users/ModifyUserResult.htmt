@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page lets the user know if the update was sucessful.
+	</p>
 	<HTMTCODE:200>
 		<H1>User updated!</H1>
 	</HTMTCODE>

@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page allows a user to rename a group (the only modifiable part of groups).
+	</p>
 	<HTMTCODE:200>
 		<HTMT:>
 			<form style="display: inline" action="http://localhost:9002/groups/modify/result" method="post">

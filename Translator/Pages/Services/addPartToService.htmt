@@ -1,4 +1,8 @@
 <html>
+	<p>
+		This page lets the user add multiple parts to a service.
+		The part price is taken from the part database, this price is kept "updated" until the service is closed, at which point it is "confirmed".
+	</p>
 	<HTMTCODE:200>
 		<H1>Add Part To Service:</H1>
 		<form style="display: inline" action="http://localhost:9002/services/authorised/part/add/result" method="post">

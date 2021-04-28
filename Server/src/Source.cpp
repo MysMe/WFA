@@ -1,5 +1,6 @@
 #include "Network.h"
 #include "Database.h"
+
 void printResult(const SQLResult& result)
 {
     if (result.columnCount() == 0 || result.rowCount() == 0)
@@ -71,6 +72,9 @@ void displayRows(sqlite3DB& DB, const std::string_view& args)
     }
 }
 
+//Executes a text file as SQL, line-by-line
+//Multi-line code not allowed
+//If a line fails, interpretation stops at the line (nothing is reverted, nothing is continued)
 void autoexec(sqlite3DB& DB, const std::string_view& args)
 {
     std::ifstream in(args.data());
@@ -114,6 +118,7 @@ void load(sqlite3DB& DB, const std::string_view& args)
         std::cout << "Opened DB file.\n";
 }
 
+//Creates the list of control sequences and associated function pointers
 std::unordered_map<std::string, std::function<void(sqlite3DB&, const std::string_view&)>> generateControlSequences()
 {
     decltype(generateControlSequences()) ret;
@@ -124,8 +129,8 @@ std::unordered_map<std::string, std::function<void(sqlite3DB&, const std::string
     return ret;
 }
 
-#include "Network.h"
-
+//Handles the database "console", always runs before the web-based portion of the system
+//Exited by entering "\\" - double backslash
 void db()
 {
     const auto sequences = generateControlSequences();
@@ -191,10 +196,11 @@ int main()
     std::cout << "Database ready:\n";
     db();
 
+    //Always ensure an empty database is given an admin user, otherwise indicate that one already exists.
     auto [status, result] = DB.query("INSERT INTO USERS(ID, USERNAME, PASSWORD, PERMISSIONS) VALUES(0, \"ADMIN\", :HAS, 3);", { {":HAS", auth.hash("ADMIN")} });
     if (!status)
     {
-        std::cout << "Failed to insert admin user.\n";
+        std::cout << "Admin user not added.\n";
     }
 
     net();

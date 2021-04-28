@@ -1,4 +1,7 @@
 <html>
+	<p>
+		This page tells the user whether they sucessfully deleted their vehicle.
+	</p>
 	<HTMTCODE:200>
 		<H1>Vehicle removed!</H1>
 	</HTMTCODE>

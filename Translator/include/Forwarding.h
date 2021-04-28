@@ -5,7 +5,8 @@
 #include "Response.h"
 #include <charconv>
 
-
+//UWebSockets uses a callback on the post body, so we have to put a callback in that callback using a third callback
+//Aka, the callback for the socket will call an unnamed callback which itself will call the argument provided to this function
 template <class Fn>
 void extractPostBody(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, Fn&& callback)
 {
@@ -48,6 +49,7 @@ void extractPostBody(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, Fn&& c
         });
 }
 
+//Forwards response data (notably cookies and contents) through the socket
 void writeBack(uWS::HttpResponse<true>* res, const APIResponse& API)
 {
     res->writeStatus(std::to_string(API.response_code));
@@ -67,6 +69,7 @@ void writeBack(uWS::HttpResponse<true>* res, const APIResponse& API)
     }
 }
 
+//Wraps a callback for UWS to call later
 void forwardPost(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, requestWrapper&& curl)
 {
     extractPostBody(res, req,
@@ -77,8 +80,10 @@ void forwardPost(uWS::HttpResponse<true>* res, uWS::HttpRequest* req, requestWra
     );
 }
 
+//Builds and sends a request to a URL, using the URL sent to the server
 void forward(uWS::HttpResponse<true>* res, uWS::HttpRequest* req)
 {
+    //Note that this is dependant on the server configuration
     std::string url = "localhost:9001";
     const auto path = req->getUrl();
     url.append(path.data(), path.size());
