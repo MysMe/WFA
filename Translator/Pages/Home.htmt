@@ -1,5 +1,13 @@
 <html>
-	<H1>WeFix Homepage</h1>
+	<H1>Homepage</h1>
+	<p>
+		The home page is the first page users visit and acts as the hub for all other pages. 
+		Depending on the users status, different links may be offerred.
+		<b>If the user is not logged in</b>, they will be directed to log in or register.
+		<b>If the user is logged in with client permissions or greater</b>, they will be able to log out, view their vehicles or view their outstanding services.
+		<b>If the user is logged in with employee permissions or greater</b>, they will be able to view the parts, unauthorised services and authorised services.
+		<b>If the user is logged in with admin permissions</b>, they will be able to manage other users.
+	</p>
 
 	<HTMTCODE:401>
 		<form action="http://localhost:9002/login" method="get">
@@ -32,7 +40,6 @@
 			<input type="hidden" value="" name="unauthorised">
 			<input type="hidden" value="" name="open">
 			<input type="hidden" value="" name="closed">
-			<input type="hidden" value="<HTMTVAL:ID>" name="UID">
 			<input type="submit" value="Manage Services">
 		</form>
 

@@ -9,6 +9,7 @@
 #include <charconv>
 #include "ServerData.h"
 #include "Response.h"
+#include "Query.h"
 
 namespace HTTPCodes
 {
@@ -21,97 +22,6 @@ namespace HTTPCodes
     constexpr auto CONFLICT             = "409";
     constexpr auto INTERNALERROR        = "500";
 }
-
-std::unordered_map<std::string, std::string> parseURLValues(std::string_view source);
-
-class query
-{
-    std::unordered_map<std::string, std::string> elements;
-
-public:
-    query() = default;
-    query(uWS::HttpRequest* req) : elements(parseURLValues(req->getQuery())) {}
-
-    bool hasElement(const std::string& name, bool allowEmpty = false) const
-    {
-        if (!allowEmpty)
-            return elements.count(name) != 0 && !elements.at(name).empty();
-        else
-            return elements.count(name) != 0;
-    }
-    std::string_view getElement(const std::string& name) const
-    {
-        return elements.at(name);
-    }
-
-    bool containsAll(const std::vector<std::string>& strings, bool allowEmpty = false) const
-    {
-        for (const auto i : strings)
-        {
-            if (!hasElement(i, allowEmpty))
-                return false;
-        }
-        return true;
-    }
-
-    bool containsAny(const std::vector<std::string>& strings, bool allowEmpty = false) const
-    {
-        for (const auto i : strings)
-        {
-            if (hasElement(i, allowEmpty))
-                return true;
-        }
-        return false;
-    }
-    auto begin() const { return elements.cbegin(); }
-    auto end() const { return elements.cend(); }
-};
-
-class body
-{
-    std::unordered_map<std::string, std::string> elements;
-
-public:
-
-    body() = default;
-    body(std::string_view contents) : elements(parseURLValues(contents)) {}
-
-    bool hasElement(const std::string& name, bool allowEmpty = false) const
-    {
-        if (allowEmpty)
-            return elements.count(name) != 0 && !elements.at(name).empty();
-        else
-            return elements.count(name) != 0;
-    }
-    std::string_view getElement(const std::string& name) const
-    {
-        return elements.at(name);
-    }
-
-    bool containsAll(const std::vector<std::string>& strings, bool allowEmpty = false) const
-    {
-        for (const auto i : strings)
-        {
-            if (!hasElement(i, allowEmpty))
-                return false;
-        }
-        return true;
-    }
-
-    bool containsAny(const std::vector<std::string>& strings, bool allowEmpty = false) const
-    {
-        for (const auto i : strings)
-        {
-            if (hasElement(i, allowEmpty))
-                return true;
-        }
-        return false;
-    }
-
-
-    auto begin() const { return elements.cbegin(); }
-    auto end() const { return elements.cend(); }
-};
 
 class HttpCallWrapper
 {

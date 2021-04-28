@@ -2,7 +2,18 @@
 	<form action="http://localhost:9002/home" method="get">
 	  <input type="submit" value="Return to Home Page">
 	</form>
+	<p>
+		The vehicle management page allows users to view and add to their list of vehicles.
+		Additionally, users may request a service on one of their vehicles.
 	<HTMTCODE:200>
+		<style>
+		table, th, td
+		{
+			border: 1px solid black;
+			border-collapse: collapse;
+		}
+		</style>
+		
 		<form action="http://localhost:9002/vehicles/create" method="get">
 		  <input type="submit" value="Add New Vehicle">
 		</form>

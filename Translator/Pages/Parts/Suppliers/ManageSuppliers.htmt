@@ -4,6 +4,14 @@
 		<input type="submit" value="Back to Parts List">
 	</form>
 	<HTMTCODE:200>
+		<style>
+		table, th, td
+		{
+			border: 1px solid black;
+			border-collapse: collapse;
+		}
+		</style>
+
 		<form action="http://localhost:9002/suppliers" method="get">
 		  <label for="details">Search Term:</label>
 		  <input type="text" name="searchterm">

@@ -926,7 +926,7 @@ namespace webRoute
                     responseWrapper temp;
                     temp.add("name", partResult[i][0]);
                     temp.add("ID", partResult[i][1]);
-                    temp.add("quanity", partResult[i][2]);
+                    temp.add("quantity", partResult[i][2]);
                     response.add("warrantied", std::move(temp), true);
                 }
             }

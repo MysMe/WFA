@@ -1,4 +1,8 @@
 <html>
+	<p>
+		The log-in result page can be used to inform the user about whether they successfully logged in.
+		In this case, you-
+	</p>
 	<HTMTCODE:200>
 		<H1>Logged In Successfully!</H1>
 	</HTMTCODE>

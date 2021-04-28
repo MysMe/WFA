@@ -1,5 +1,18 @@
 <html>
+	<form action="http://localhost:9002/services/me" method="get">
+		<input type="hidden" value="" name="unauthorised">
+		<input type="hidden" value="" name="open">
+		<input type="hidden" value="" name="closed">
+		<input type="submit" value="Back to Services">
+	</form>
 	<HTMTCODE:200>
+		<style>
+		table, th, td
+		{
+			border: 1px solid black;
+			border-collapse: collapse;
+		}
+		</style>
 		<table>
 			<tr>
 				<th>Date Requested</th><th>Request</th><th>Total Labour Hours</th>
@@ -8,18 +21,29 @@
 			<tr>
 				<td><HTMTVAL:requested></td><td><HTMTVAL:request></td><td><HTMTVAL:labour></td>
 				<td><HTMTVAL:notes></td><td><HTMTVAL:completed></td><td><HTMTVAL:paid></td>
-			</tr>	
-			Parts:
-			<table>
+			</tr>
+		</table>
+		Parts:
+		<table>
+			<tr>
+				<td>Name</td><td>Quantity</td><td>Per-Unit Price</td>
+			</tr>
+			<HTMT:parts>
 				<tr>
-					<td>Name</td><td>Quantity</td><td>Per-Unit Price</td>
+					<td><HTMTVAL:name></td><td><HTMTVAL:quantity></td><td><HTMTVAL:price></td>
 				</tr>
-				<HTMT:parts>
-					<tr>
-						<td><HTMTVAL:name></td><td><HTMTVAL:quantity></td><td><HTMTVAL:price></td>
-					</tr>
-				</HTMT>
-			</table>
+			</HTMT>
+		</table>
+		Parts Under Warranty:
+		<table>
+			<tr>
+				<td>Name</td><td>Quantity</td>
+			</tr>
+			<HTMT:warrantied>
+				<tr>
+					<td><HTMTVAL:name></td><td><HTMTVAL:quantity></td>
+				</tr>
+			</HTMT>
 		</table>
 	</HTMTCODE>
 	<HTMTCODE:404>

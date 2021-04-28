@@ -22,7 +22,7 @@
 				<input type="submit" value="Submit">
 			</form>
 			
-			<form action="http://localhost:9002/vehicles/remove/result" method="post">
+			<form style="display: inline" action="http://localhost:9002/vehicles/remove/result" method="post">
 				<input type="hidden" value="<HTMTVAL:ID>" name="ID" readonly>
 				<input type="submit" value="Remove Vehicle">
 			</form>

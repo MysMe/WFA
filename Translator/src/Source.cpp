@@ -7,6 +7,7 @@
 #include <fstream>
 #include <array>
 
+#include "Query.h"
 
 std::string_view::const_iterator tagSearch(std::string_view::const_iterator begin, std::string_view::const_iterator end, std::string_view prefix, std::string_view postfix)
 {
@@ -41,20 +42,6 @@ std::string_view::const_iterator tagSearch(std::string_view::const_iterator begi
     return end;
 }
 
-/*
-Possible tags:
-    <HTMT:XXX></HTMT>, Iterate over named field values
-    <HTMTVAL:XXX>, Get the value of a name field, which may only have one value
-    <HTMTCODE:XXX>, Only includes the translation content if the HTTP code matches XXX
-
-
-Example HTMT:
-
-<HTML>
-<HTMT>Your username is <HTMTVAL:USERNAME><HTMT>
-</HTML>
-*/
-
 class translation;
 
 class translationValue
@@ -64,7 +51,8 @@ public:
     {
         access,
         HTML,
-        translation
+        translation, 
+        query
     };
 
     using value_type = std::variant<std::string, std::unique_ptr<translation>>;
@@ -84,8 +72,9 @@ public:
     static translationValue asHTML(std::string_view str) { return translationValue(str, state::HTML); }
     static translationValue asAccess(std::string_view str) { return translationValue(str, state::access); }
     static translationValue asTranslation(translation&& tran) { return translationValue(std::move(tran)); }
+    static translationValue asQuery(std::string_view str) { return translationValue(str, state::query); }
 
-    void apply(std::string& source, const responseWrapper& data, long httpCode) const;
+    void apply(std::string& source, const responseWrapper& data, long httpCode, const query& q) const;
 };
 
 class translationCondition
@@ -257,14 +246,24 @@ class translation
 
     static void parseSubHTML(translation& obj, std::string_view HTML)
     {
-        //Number of characters in "<HTMTVAL"
-        constexpr auto tagSize = 9;
+        static const std::vector<std::string> tags{ "<HTMTVAL", "<HTMTQUERY" };
 
         auto left = HTML.cbegin();
         while (left != HTML.cend())
         {
-            //Find any value requests
-            const auto fpos = std::string_view(&*left, HTML.cend() - left).find("<HTMTVAL:");
+            //Find any HTMT requests
+            size_t fpos = std::string::npos;
+            size_t tagType = 0;
+            for (size_t i = 0; i < tags.size(); i++)
+            {
+                const auto temp = std::string_view(&*left, HTML.cend() - left).find(tags[i]);
+                if (temp != std::string::npos && temp < fpos)
+                {
+                    fpos = temp;
+                    tagType = i;
+                }
+            }
+
             auto it = fpos != std::string_view::npos ? left + fpos : HTML.cend();
 
             //Add any text before the value request as raw HTML
@@ -275,14 +274,26 @@ class translation
             if (it == HTML.cend())
                 break;
 
-            const auto nameStart = it + tagSize;
+            const auto nameStart = it + tags[tagType].size() + 1;
             const auto nameEnd = std::find(nameStart, HTML.cend(), '>');
 
-            //Extract the value name
-            if (left != it)
-                obj.values.emplace_back(translationValue::asAccess(std::string_view(&*nameStart, nameEnd - nameStart)));
-            //Skip the closing '>'
-            left = nameEnd + 1;
+            const std::string_view contents = std::string_view(&*nameStart, nameEnd - nameStart);
+
+            switch (tagType)
+            {
+            default:
+                throw(std::logic_error("Invalid tag type."));
+            case(0): //HTMTVAL
+                obj.values.emplace_back(translationValue::asAccess(contents));
+                break;
+            case(1): //HTMTQUERY
+                obj.values.emplace_back(translationValue::asQuery(contents));
+                break;
+            }
+            left = nameEnd;
+            //Skip the closing '>', if present
+            if (left != HTML.cend())
+                ++left;
         }
     }
 
@@ -319,13 +330,13 @@ public:
     translation& operator=(const translation&) = delete;
     translation& operator=(translation&&) = default;
 
-    void apply(std::string& source, const responseWrapper& data, long httpCode) const
+    void apply(std::string& source, const responseWrapper& data, long httpCode, const query& q) const
     {
         if (match == matchType::always)
         {
             //Special case for empty <HTMT> tags and/or default translations
             for (const auto& i : values)
-                i.apply(source, data, httpCode);
+                i.apply(source, data, httpCode, q);
         }
         else if (matches(data, httpCode))
         {
@@ -341,29 +352,29 @@ public:
                 for (const auto& i : std::get<responseWrapper::objectContainer>(maybeSubField.value().get()))
                 {
                     for (const auto& u : values)
-                        u.apply(source, i, httpCode);
+                        u.apply(source, i, httpCode, q);
                 }
             }
             else
             {
                 for (const auto& i : values)
                 {
-                    i.apply(source, data, httpCode);
+                    i.apply(source, data, httpCode, q);
                 }
             }
         }
     }
 
-    std::string apply(const responseWrapper& data, long httpCode) const
+    std::string apply(const responseWrapper& data, long httpCode, const query& q) const
     {
         std::string ret;
-        apply(ret, data, httpCode);
+        apply(ret, data, httpCode, q);
         return ret;
     }
 
     static translation parse(std::string_view source)
     {
-        //Divide the string by ever instance of "<HTMT:", "<HTMTVAL:" and "<HTMTCOND:" and their respective closing tags
+        //Divide the string by every instance of "<HTMT:", "<HTMTCOND:" and "<HTMTCOND:" and their respective closing tags
         {
             //Order must match order of matchType
             static const std::vector<std::string_view> tagOpens{ "<HTMT:", "<HTMTCODE:", "<HTMTCOND:" };
@@ -439,10 +450,12 @@ public:
     }
 };
 
-void translationValue::apply(std::string& source, const responseWrapper& data, long httpCode) const
+void translationValue::apply(std::string& source, const responseWrapper& data, long httpCode, const query& q) const
 {
     switch (valueType)
     {
+    default:
+        throw(std::logic_error("Invalid Enum State"));
     case(state::access):
     {
         const auto maybeValues = data.search(std::get<std::string>(value));
@@ -460,8 +473,14 @@ void translationValue::apply(std::string& source, const responseWrapper& data, l
         source += std::get<std::string>(value);
         return;
     case(state::translation):
-        std::get<std::unique_ptr<translation>>(value)->apply(source, data, httpCode);
+        std::get<std::unique_ptr<translation>>(value)->apply(source, data, httpCode, q);
         return;
+    case(state::query):
+        if (q.hasElement(std::get<std::string>(value)))
+            source += q.getElement(std::get<std::string>(value));
+        else
+            std::cout << "Warning: Query element " << std::get<std::string>(value) << " was not present in request.\n";
+        //Note the implicit "else" case, where nothing is added
     }
 }
 
@@ -495,7 +514,7 @@ class forwardingWrapper final : public webpageWrapper
     translation data;
     std::string destination;
 
-    static void applyTranslation(uWS::HttpResponse<true>* res, const APIResponse& API, const translation& tran)
+    static void applyTranslation(uWS::HttpResponse<true>* res, const APIResponse& API, const translation& tran, const query &q)
     {
         res->writeStatus(std::to_string(API.response_code));
         for (const auto& i : API.headers)
@@ -505,7 +524,7 @@ class forwardingWrapper final : public webpageWrapper
         const auto resw = responseWrapper::fromData(API.response);
         if (resw.has_value())
         {
-            res->tryEnd(tran.apply(resw.value(), API.response_code));
+            res->tryEnd(tran.apply(resw.value(), API.response_code, q));
         }
         else
         {
@@ -561,7 +580,7 @@ class forwardingWrapper final : public webpageWrapper
         extractPostBody(res, req,
             [curl = std::move(curl), &tran](uWS::HttpResponse<true>* res, uWS::HttpRequest* req, std::string_view body) mutable
         {
-            applyTranslation(res, curl.post(body), tran);
+            applyTranslation(res, curl.post(body), tran, query(req));
         }
         );
     }
@@ -576,11 +595,11 @@ public:
     {
         std::string url = "localhost:9001";
         url += destination;
-        const auto query = req->getQuery();
-        if (!query.empty())
+        const auto urlQuery = req->getQuery();
+        if (!urlQuery.empty())
         {
             url += '?';
-            url.append(query.data(), query.size());
+            url.append(urlQuery.data(), urlQuery.size());
         }
         requestWrapper request(url);
         request.setCookies(std::string{ req->getHeader("cookie") });
@@ -590,7 +609,7 @@ public:
         }
         else
         {
-            applyTranslation(res, request.get(), data);
+            applyTranslation(res, request.get(), data, query(req));
         }
     }
 };

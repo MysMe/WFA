@@ -3,6 +3,14 @@
 		<input type="submit" value="Return to Home Page">
 	</form>
 	<HTMTCODE:200>
+		<style>
+		table, th, td
+		{
+			border: 1px solid black;
+			border-collapse: collapse;
+		}
+		</style>
+
 		<form action="http://localhost:9002/parts" method="get">
 		  <label for="details">Search:</label>
 		  <input type="text" name="name">
